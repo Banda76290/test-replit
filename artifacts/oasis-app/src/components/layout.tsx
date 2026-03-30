@@ -53,10 +53,38 @@ export function AppLayout({ children }: { children: ReactNode }) {
         <aside
           className={`hidden md:flex flex-col border-r border-border bg-sidebar shrink-0 transition-all duration-200 ${collapsed ? "w-16" : "w-64"}`}
         >
-          <div className={`h-16 flex items-center border-b border-border shrink-0 ${collapsed ? "justify-center px-0" : "px-6"}`}>
-            {!collapsed && <Logo />}
+          <div className={`h-16 flex items-center border-b border-border shrink-0 ${collapsed ? "justify-center px-0" : "px-4 gap-2"}`}>
+            {!collapsed && (
+              <>
+                <div className="flex-1 min-w-0">
+                  <Logo />
+                </div>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => setCollapsed(true)}
+                  className="shrink-0 text-muted-foreground hover:text-foreground"
+                  title="Réduire le menu"
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                </Button>
+              </>
+            )}
             {collapsed && (
-              <span className="text-primary font-extrabold text-xl leading-none">O</span>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => setCollapsed(false)}
+                    className="text-muted-foreground hover:text-foreground"
+                    title="Agrandir le menu"
+                  >
+                    <ChevronRight className="h-4 w-4" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent side="right">Agrandir le menu</TooltipContent>
+              </Tooltip>
             )}
           </div>
 
@@ -131,15 +159,6 @@ export function AppLayout({ children }: { children: ReactNode }) {
               </Tooltip>
             )}
 
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => setCollapsed((c) => !c)}
-              className={`w-full mt-2 text-muted-foreground hover:text-foreground`}
-              title={collapsed ? "Agrandir le menu" : "Réduire le menu"}
-            >
-              {collapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
-            </Button>
           </div>
         </aside>
 
