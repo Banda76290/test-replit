@@ -39,10 +39,10 @@ export default function ClientsPage() {
               placeholder="Rechercher par nom ou secteur..." 
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="w-full pl-10 pr-4 py-2.5 bg-white border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary shadow-sm transition-all"
+              className="w-full pl-10 pr-4 py-2.5 bg-card border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary shadow-sm transition-all"
             />
           </div>
-          <button className="flex items-center gap-2 px-4 py-2.5 bg-white border border-border rounded-lg text-sm font-medium hover:bg-muted/50 transition-colors shadow-sm">
+          <button className="flex items-center gap-2 px-4 py-2.5 bg-card border border-border rounded-lg text-sm font-medium hover:bg-muted/50 transition-colors shadow-sm">
             <Filter className="w-4 h-4" />
             Filtres
           </button>
@@ -56,7 +56,7 @@ export default function ClientsPage() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {clients?.map((client) => (
               <Link key={client.id} href={`/clients/${client.id}/projects`}>
-                <Card className="h-full border-border/60 hover:border-primary/40 hover:shadow-lg transition-all cursor-pointer group bg-white">
+                <Card className="h-full border-border/60 hover:border-primary/40 hover:shadow-lg transition-all cursor-pointer group bg-card">
                   <CardContent className="p-6 flex flex-col h-full">
                     <div className="flex justify-between items-start mb-4">
                       <div className="flex items-center gap-3">
@@ -71,7 +71,7 @@ export default function ClientsPage() {
                       <span className={`px-2.5 py-1 rounded-full text-xs font-semibold ${
                         client.priority === 'high' ? 'bg-destructive/10 text-destructive' : 
                         client.priority === 'medium' ? 'bg-amber-100 text-amber-700' : 
-                        'bg-slate-100 text-slate-700'
+                        'bg-muted text-foreground/90'
                       }`}>
                         {PRIORITY_LABELS[client.priority] || client.priority}
                       </span>

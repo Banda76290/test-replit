@@ -31,7 +31,7 @@ export default function LoginPage() {
           <p className="text-muted-foreground tracking-wide uppercase text-sm font-medium">Solutions Digitales</p>
         </div>
 
-        <Card className="border-none shadow-xl shadow-black/5 bg-white/90 backdrop-blur-xl">
+        <Card className="border-none shadow-xl shadow-black/5 bg-card/90 backdrop-blur-xl">
           <CardHeader className="text-center space-y-2 pb-6 border-b border-border/50">
             <CardTitle className="text-2xl">Portail Entreprise</CardTitle>
             <CardDescription>Accès interne</CardDescription>

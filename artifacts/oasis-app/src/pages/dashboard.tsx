@@ -112,7 +112,7 @@ export default function DashboardPage() {
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   {summary.recentProjects.slice(0, 4).map(project => (
                     <Link key={project.id} href={`/workspace/${project.id}`}>
-                      <div className="p-4 rounded-lg border border-border/50 hover:border-primary/50 hover:shadow-md transition-all cursor-pointer group bg-white">
+                      <div className="p-4 rounded-lg border border-border/50 hover:border-primary/50 hover:shadow-md transition-all cursor-pointer group bg-card">
                         <div className="flex justify-between items-start mb-2">
                           <h4 className="font-semibold text-foreground group-hover:text-primary transition-colors">{project.name}</h4>
                           <span className={`px-2 py-1 rounded-full text-[10px] font-medium ${
@@ -150,7 +150,7 @@ export default function DashboardPage() {
               <CardContent className="space-y-4">
                 {summary.suggestedActions.map((action, i) => (
                   <Link key={i} href={action.link}>
-                    <div className="group block p-3 rounded-lg bg-white border border-primary/10 hover:border-primary/30 hover:shadow-sm transition-all cursor-pointer">
+                    <div className="group block p-3 rounded-lg bg-card border border-primary/10 hover:border-primary/30 hover:shadow-sm transition-all cursor-pointer">
                       <h4 className="font-medium text-sm text-foreground group-hover:text-primary">{action.label}</h4>
                       <p className="text-xs text-muted-foreground mt-1">{action.description}</p>
                     </div>

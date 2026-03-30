@@ -34,16 +34,16 @@ export default function HistoryPage() {
             <input 
               type="text" 
               placeholder="Rechercher par mot-clé, client ou projet..." 
-              className="w-full pl-10 pr-4 py-2 bg-white border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary shadow-sm"
+              className="w-full pl-10 pr-4 py-2 bg-card border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary shadow-sm"
             />
           </div>
-          <button className="flex items-center gap-2 px-4 py-2 bg-white border border-border rounded-lg text-sm font-medium shadow-sm hover:bg-muted/50 transition-colors">
+          <button className="flex items-center gap-2 px-4 py-2 bg-card border border-border rounded-lg text-sm font-medium shadow-sm hover:bg-muted/50 transition-colors">
             <Filter className="w-4 h-4" />
             Filtres
           </button>
         </div>
 
-        <Card className="border-border/60 shadow-sm bg-white overflow-hidden">
+        <Card className="border-border/60 shadow-sm bg-card overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full text-sm text-left">
               <thead className="bg-muted/50 border-b border-border/60 text-muted-foreground uppercase tracking-wider text-xs">
@@ -112,7 +112,7 @@ function StatusBadge({ status }: { status: string }) {
     pending: { label: "En attente", style: "bg-amber-100 text-amber-700 border-amber-200", Icon: Clock },
   };
 
-  const { label, style, Icon } = config[status] || { label: status, style: "bg-slate-100 text-slate-700 border-slate-200", Icon: Clock };
+  const { label, style, Icon } = config[status] || { label: status, style: "bg-muted text-foreground/90 border-border", Icon: Clock };
 
   return (
     <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-semibold border ${style}`}>

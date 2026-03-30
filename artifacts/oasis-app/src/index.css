@@ -107,44 +107,50 @@
 }
 
 .dark {
-  --primary: 194 100% 50%;
+  --primary: 194 90% 48%;
   --primary-foreground: 0 0% 100%;
 
-  --background: 222 47% 9%;
-  --foreground: 210 40% 96%;
+  /* Fond général — bleu-gris profond mais pas noir */
+  --background: 220 28% 13%;
+  --foreground: 210 40% 94%;
 
-  --card: 222 47% 12%;
-  --card-foreground: 210 40% 96%;
-  --card-border: 217 33% 20%;
+  /* Cartes — nettement plus claires que le fond */
+  --card: 220 25% 19%;
+  --card-foreground: 210 40% 94%;
+  --card-border: 220 22% 30%;
 
-  --popover: 222 47% 12%;
-  --popover-foreground: 210 40% 96%;
-  --popover-border: 217 33% 20%;
+  --popover: 220 25% 19%;
+  --popover-foreground: 210 40% 94%;
+  --popover-border: 220 22% 30%;
 
-  --secondary: 217 33% 17%;
-  --secondary-foreground: 210 40% 96%;
+  /* Secondaire — légèrement plus clair que la carte */
+  --secondary: 220 22% 26%;
+  --secondary-foreground: 210 40% 94%;
 
-  --muted: 217 33% 17%;
-  --muted-foreground: 215 20% 60%;
+  /* Muted — boîtes internes (stats, badges fond) */
+  --muted: 220 22% 26%;
+  --muted-foreground: 215 20% 72%;
 
-  --accent: 194 60% 18%;
-  --accent-foreground: 194 100% 70%;
+  /* Accent OASIS — teinte bleue discrète */
+  --accent: 194 50% 22%;
+  --accent-foreground: 194 90% 75%;
 
-  --destructive: 0 72% 55%;
+  --destructive: 0 70% 58%;
   --destructive-foreground: 0 0% 100%;
 
-  --border: 217 33% 20%;
-  --input: 217 33% 20%;
-  --ring: 194 100% 50%;
+  --border: 220 22% 30%;
+  --input: 220 22% 30%;
+  --ring: 194 90% 48%;
 
-  --sidebar: 222 47% 11%;
-  --sidebar-foreground: 210 40% 96%;
-  --sidebar-border: 217 33% 20%;
-  --sidebar-primary: 194 100% 50%;
+  /* Sidebar — légèrement plus sombre que les cartes */
+  --sidebar: 220 28% 15%;
+  --sidebar-foreground: 210 40% 94%;
+  --sidebar-border: 220 22% 28%;
+  --sidebar-primary: 194 90% 48%;
   --sidebar-primary-foreground: 0 0% 100%;
-  --sidebar-accent: 194 60% 18%;
-  --sidebar-accent-foreground: 194 100% 70%;
-  --sidebar-ring: 194 100% 50%;
+  --sidebar-accent: 194 50% 22%;
+  --sidebar-accent-foreground: 194 90% 75%;
+  --sidebar-ring: 194 90% 48%;
 }
 
 @keyframes fade-in {

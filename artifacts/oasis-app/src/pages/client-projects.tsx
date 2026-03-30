@@ -59,9 +59,9 @@ export default function ClientProjectsPage() {
         ) : (
           <div className="grid grid-cols-1 gap-4">
             {projects?.map((project) => {
-              const healthInfo = HEALTH_LABELS[project.health] || { label: project.health, color: "text-slate-600" };
+              const healthInfo = HEALTH_LABELS[project.health] || { label: project.health, color: "text-foreground/80" };
               return (
-                <Card key={project.id} className="border-border/60 hover:border-primary/30 hover:shadow-md transition-all group bg-white">
+                <Card key={project.id} className="border-border/60 hover:border-primary/30 hover:shadow-md transition-all group bg-card">
                   <CardContent className="p-0">
                     <div className="flex flex-col lg:flex-row">
                       <div className="p-6 flex-1 border-b lg:border-b-0 lg:border-r border-border/50">
@@ -71,7 +71,7 @@ export default function ClientProjectsPage() {
                             project.status === 'in-progress' ? 'bg-blue-100 text-blue-700' : 
                             project.status === 'critical' ? 'bg-red-100 text-red-700' :
                             project.status === 'completed' ? 'bg-emerald-100 text-emerald-700' : 
-                            'bg-slate-100 text-slate-700'
+                            'bg-muted text-foreground/90'
                           }`}>
                             {STATUS_LABELS[project.status] || project.status}
                           </span>
@@ -81,7 +81,7 @@ export default function ClientProjectsPage() {
                         </p>
                         
                         <div className="flex flex-wrap items-center gap-4 text-xs">
-                          <div className="flex items-center gap-1.5 text-slate-600 bg-slate-50 px-2 py-1 rounded-md border border-slate-100">
+                          <div className="flex items-center gap-1.5 text-foreground/80 bg-muted/50 px-2 py-1 rounded-md border border-border">
                             <Server className="w-3.5 h-3.5" />
                             <div className="flex gap-1">
                               {project.techStack.slice(0, 4).map(tech => (
@@ -90,7 +90,7 @@ export default function ClientProjectsPage() {
                               {project.techStack.length > 4 && <span>+{project.techStack.length - 4}</span>}
                             </div>
                           </div>
-                          <div className="flex items-center gap-1.5 text-slate-600">
+                          <div className="flex items-center gap-1.5 text-foreground/80">
                             <Calendar className="w-3.5 h-3.5" />
                             <span>Mis à jour le {format(new Date(project.lastUpdated), 'd MMM yyyy', { locale: fr })}</span>
                           </div>

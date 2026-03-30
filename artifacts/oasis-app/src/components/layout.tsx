@@ -163,21 +163,21 @@ export function AppLayout({ children }: { children: ReactNode }) {
         </aside>
 
         <div className="flex-1 flex flex-col h-screen overflow-hidden">
-          <header className="md:hidden h-16 border-b border-border bg-white flex items-center justify-between px-4 shrink-0">
+          <header className="md:hidden h-16 border-b border-border bg-card flex items-center justify-between px-4 shrink-0">
             <Logo />
             <Button variant="ghost" size="icon">
               <Menu className="h-5 w-5" />
             </Button>
           </header>
 
-          <header className="hidden md:flex h-16 border-b border-border bg-white items-center justify-between px-8 shrink-0 glass-panel z-10 sticky top-0">
+          <header className="hidden md:flex h-16 border-b border-border bg-card items-center justify-between px-8 shrink-0 glass-panel z-10 sticky top-0">
             <div className="flex items-center w-full max-w-md">
               <div className="relative w-full">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <input
                   type="text"
                   placeholder="Rechercher dans OASIS..."
-                  className="w-full pl-10 pr-4 py-2 bg-muted/50 border-transparent rounded-md text-sm focus:bg-white dark:focus:bg-card focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all outline-none text-foreground placeholder:text-muted-foreground"
+                  className="w-full pl-10 pr-4 py-2 bg-muted/50 border-transparent rounded-md text-sm focus:bg-card dark:focus:bg-card focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all outline-none text-foreground placeholder:text-muted-foreground"
                 />
               </div>
             </div>

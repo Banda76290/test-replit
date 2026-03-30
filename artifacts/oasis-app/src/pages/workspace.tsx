@@ -87,7 +87,7 @@ export default function WorkspacePage() {
                           "text-left px-3 py-2 rounded-md text-sm transition-all border",
                           taskType === type.id 
                             ? "bg-primary/5 border-primary text-primary font-medium" 
-                            : "bg-white border-border text-muted-foreground hover:border-border/80"
+                            : "bg-card border-border text-muted-foreground hover:border-border/80"
                         )}
                       >
                         {type.label}
@@ -126,7 +126,7 @@ export default function WorkspacePage() {
             </Card>
           </div>
 
-          <div className="lg:col-span-8 flex flex-col h-full bg-white rounded-xl border border-border/60 shadow-sm overflow-hidden">
+          <div className="lg:col-span-8 flex flex-col h-full bg-card rounded-xl border border-border/60 shadow-sm overflow-hidden">
             {runAnalysis.isPending ? (
               <div className="flex-1 flex flex-col items-center justify-center bg-muted/10">
                 <div className="relative">
@@ -161,7 +161,7 @@ export default function WorkspacePage() {
                   </div>
                 </div>
 
-                <div className="flex-1 overflow-y-auto p-6 bg-slate-50/50">
+                <div className="flex-1 overflow-y-auto p-6 bg-muted/20">
                   {activeTab === 'summary' && <SummaryView result={result} />}
                   {activeTab === 'plan' && result.technicalPlan && <PlanView plan={result.technicalPlan} />}
                   {activeTab === 'sources' && <SourcesView analysisId={result.id} />}
@@ -171,7 +171,7 @@ export default function WorkspacePage() {
               </div>
             ) : (
               <div className="flex-1 flex flex-col items-center justify-center bg-muted/10 text-center p-8">
-                <div className="w-16 h-16 rounded-2xl bg-white shadow-sm flex items-center justify-center mb-6">
+                <div className="w-16 h-16 rounded-2xl bg-card shadow-sm flex items-center justify-center mb-6">
                   <Sparkles className="w-8 h-8 text-primary" />
                 </div>
                 <h2 className="text-xl font-bold text-foreground">Prêt pour l'analyse</h2>
@@ -207,8 +207,8 @@ function SummaryView({ result }: { result: AnalysisResult }) {
     <div className="space-y-8 animate-fade-in">
       {result.requestUnderstanding && (
         <section>
-          <h3 className="text-sm font-bold text-slate-800 uppercase tracking-wider mb-3">Compréhension de la demande</h3>
-          <p className="text-slate-700 leading-relaxed bg-white p-4 rounded-lg border border-slate-200 shadow-sm">
+          <h3 className="text-sm font-bold text-foreground uppercase tracking-wider mb-3">Compréhension de la demande</h3>
+          <p className="text-foreground/90 leading-relaxed bg-card p-4 rounded-lg border border-border shadow-sm">
             {result.requestUnderstanding}
           </p>
         </section>
@@ -217,13 +217,13 @@ function SummaryView({ result }: { result: AnalysisResult }) {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {result.impactedComponents && (
           <section>
-            <h3 className="text-sm font-bold text-slate-800 uppercase tracking-wider mb-3 flex items-center">
+            <h3 className="text-sm font-bold text-foreground uppercase tracking-wider mb-3 flex items-center">
               <Server className="w-4 h-4 mr-2 text-primary" />
               Composants impactés
             </h3>
             <ul className="space-y-2">
               {result.impactedComponents.map((comp, i) => (
-                <li key={i} className="bg-white p-3 rounded border border-slate-200 shadow-sm text-sm text-slate-700 flex items-start">
+                <li key={i} className="bg-card p-3 rounded border border-border shadow-sm text-sm text-foreground/90 flex items-start">
                   <div className="w-1.5 h-1.5 rounded-full bg-primary mt-1.5 mr-3 shrink-0"></div>
                   {comp}
                 </li>
@@ -234,13 +234,13 @@ function SummaryView({ result }: { result: AnalysisResult }) {
 
         {result.identifiedRisks && (
           <section>
-            <h3 className="text-sm font-bold text-slate-800 uppercase tracking-wider mb-3 flex items-center">
+            <h3 className="text-sm font-bold text-foreground uppercase tracking-wider mb-3 flex items-center">
               <AlertTriangle className="w-4 h-4 mr-2 text-amber-500" />
               Risques identifiés
             </h3>
             <ul className="space-y-2">
               {result.identifiedRisks.map((risk, i) => (
-                <li key={i} className="bg-amber-50/50 p-3 rounded border border-amber-100 text-sm text-amber-900 flex items-start">
+                <li key={i} className="bg-amber-500/10 p-3 rounded border border-amber-500/20 text-sm text-amber-600 dark:text-amber-400 flex items-start">
                   <div className="w-1.5 h-1.5 rounded-full bg-amber-500 mt-1.5 mr-3 shrink-0"></div>
                   {risk}
                 </li>
@@ -252,8 +252,8 @@ function SummaryView({ result }: { result: AnalysisResult }) {
 
       {result.recommendedApproach && (
         <section>
-          <h3 className="text-sm font-bold text-slate-800 uppercase tracking-wider mb-3">Approche recommandée</h3>
-          <div className="bg-primary/5 p-5 rounded-lg border border-primary/20 text-slate-800 leading-relaxed">
+          <h3 className="text-sm font-bold text-foreground uppercase tracking-wider mb-3">Approche recommandée</h3>
+          <div className="bg-primary/5 p-5 rounded-lg border border-primary/20 text-foreground leading-relaxed">
             {result.recommendedApproach}
           </div>
         </section>
@@ -266,25 +266,25 @@ function PlanView({ plan }: { plan: any }) {
   return (
     <div className="space-y-6 animate-fade-in">
       <div className="flex gap-4 mb-6">
-        <div className="bg-white px-4 py-2 rounded-lg border border-slate-200 shadow-sm flex-1">
-          <p className="text-xs text-slate-500 font-medium uppercase tracking-wider mb-1">Complexité</p>
-          <p className="font-semibold text-slate-800">{plan.complexityEstimate}</p>
+        <div className="bg-card px-4 py-2 rounded-lg border border-border shadow-sm flex-1">
+          <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider mb-1">Complexité</p>
+          <p className="font-semibold text-foreground">{plan.complexityEstimate}</p>
         </div>
-        <div className="bg-white px-4 py-2 rounded-lg border border-slate-200 shadow-sm flex-1">
-          <p className="text-xs text-slate-500 font-medium uppercase tracking-wider mb-1">Effort estimé</p>
-          <p className="font-semibold text-slate-800">{plan.effortEstimate}</p>
+        <div className="bg-card px-4 py-2 rounded-lg border border-border shadow-sm flex-1">
+          <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider mb-1">Effort estimé</p>
+          <p className="font-semibold text-foreground">{plan.effortEstimate}</p>
         </div>
       </div>
 
       <section>
-        <h3 className="text-sm font-bold text-slate-800 uppercase tracking-wider mb-4">Séquence d'actions</h3>
-        <div className="space-y-3 relative before:absolute before:inset-0 before:ml-5 before:-translate-x-px md:before:mx-auto md:before:translate-x-0 before:h-full before:w-0.5 before:bg-gradient-to-b before:from-transparent before:via-slate-300 before:to-transparent">
+        <h3 className="text-sm font-bold text-foreground uppercase tracking-wider mb-4">Séquence d'actions</h3>
+        <div className="space-y-3 relative before:absolute before:inset-0 before:ml-5 before:-translate-x-px md:before:mx-auto md:before:translate-x-0 before:h-full before:w-0.5 before:bg-gradient-to-b before:from-transparent before:via-border before:to-transparent">
           {plan.actionSequence.map((step: string, i: number) => (
             <div key={i} className="relative flex items-center justify-between md:justify-normal md:odd:flex-row-reverse group is-active">
-              <div className="flex items-center justify-center w-10 h-10 rounded-full border-4 border-white bg-slate-100 text-slate-500 font-bold shrink-0 md:order-1 md:group-odd:-translate-x-1/2 md:group-even:translate-x-1/2 shadow-sm z-10">
+              <div className="flex items-center justify-center w-10 h-10 rounded-full border-4 border-card bg-muted text-muted-foreground font-bold shrink-0 md:order-1 md:group-odd:-translate-x-1/2 md:group-even:translate-x-1/2 shadow-sm z-10">
                 {i + 1}
               </div>
-              <div className="w-[calc(100%-4rem)] md:w-[calc(50%-2.5rem)] bg-white p-4 rounded-lg border border-slate-200 shadow-sm text-sm text-slate-700">
+              <div className="w-[calc(100%-4rem)] md:w-[calc(50%-2.5rem)] bg-card p-4 rounded-lg border border-border shadow-sm text-sm text-foreground/90">
                 {step}
               </div>
             </div>
@@ -298,23 +298,23 @@ function PlanView({ plan }: { plan: any }) {
 function SourcesView({ analysisId }: { analysisId: string }) {
   return (
     <div className="animate-fade-in space-y-4">
-      <div className="p-4 bg-white rounded-lg border border-slate-200 shadow-sm">
+      <div className="p-4 bg-card rounded-lg border border-border shadow-sm">
         <div className="flex items-center justify-between mb-2">
           <span className="text-xs font-bold uppercase text-primary bg-primary/10 px-2 py-1 rounded">Code source</span>
-          <span className="text-xs text-slate-500">Pertinence : 95%</span>
+          <span className="text-xs text-muted-foreground">Pertinence : 95%</span>
         </div>
-        <h4 className="font-semibold text-slate-800 mb-2">api/src/services/billing.ts</h4>
-        <p className="text-sm text-slate-600 font-mono bg-slate-50 p-2 rounded">
+        <h4 className="font-semibold text-foreground mb-2">api/src/services/billing.ts</h4>
+        <p className="text-sm text-foreground/80 font-mono bg-muted/50 p-2 rounded">
           Contexte extrait concernant l'implémentation actuelle du webhook de paiement.
         </p>
       </div>
-      <div className="p-4 bg-white rounded-lg border border-slate-200 shadow-sm">
+      <div className="p-4 bg-card rounded-lg border border-border shadow-sm">
         <div className="flex items-center justify-between mb-2">
           <span className="text-xs font-bold uppercase text-purple-600 bg-purple-100 px-2 py-1 rounded">Ticket Jira</span>
-          <span className="text-xs text-slate-500">Pertinence : 88%</span>
+          <span className="text-xs text-muted-foreground">Pertinence : 88%</span>
         </div>
-        <h4 className="font-semibold text-slate-800 mb-2">PROJ-482 : Mise à jour de la version API Stripe</h4>
-        <p className="text-sm text-slate-600 bg-slate-50 p-2 rounded">
+        <h4 className="font-semibold text-foreground mb-2">PROJ-482 : Mise à jour de la version API Stripe</h4>
+        <p className="text-sm text-foreground/80 bg-muted/50 p-2 rounded">
           La tentative précédente de mise à jour de l'API a échoué en raison d'une incompatibilité de signature webhook.
         </p>
       </div>
@@ -335,7 +335,7 @@ function FeedbackPanel({ analysisId }: { analysisId: string }) {
   };
 
   return (
-    <div className="bg-white border-t border-border/60 p-4 shrink-0 flex flex-col md:flex-row gap-4 items-center justify-between">
+    <div className="bg-card border-t border-border/60 p-4 shrink-0 flex flex-col md:flex-row gap-4 items-center justify-between">
       <div className="flex-1 w-full relative">
         <input 
           type="text" 

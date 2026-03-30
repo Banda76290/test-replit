@@ -44,10 +44,10 @@ export default function AdminPage() {
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <div className="md:col-span-1 space-y-6">
-            <Card className="border-border/60 shadow-sm bg-white overflow-hidden text-center">
+            <Card className="border-border/60 shadow-sm bg-card overflow-hidden text-center">
               <div className="h-24 bg-gradient-to-r from-primary/80 to-primary"></div>
               <CardContent className="px-6 pb-6 pt-0 relative">
-                <div className="w-20 h-20 rounded-full border-4 border-white bg-white mx-auto -mt-10 mb-4 shadow-sm flex items-center justify-center overflow-hidden">
+                <div className="w-20 h-20 rounded-full border-4 border-background bg-card mx-auto -mt-10 mb-4 shadow-sm flex items-center justify-center overflow-hidden">
                   <div className="w-full h-full bg-primary/10 text-primary flex items-center justify-center text-2xl font-bold">
                     {profile.user.name.charAt(0)}
                   </div>
@@ -76,7 +76,7 @@ export default function AdminPage() {
           </div>
 
           <div className="md:col-span-2 space-y-6">
-            <Card className="border-border/60 shadow-sm bg-white">
+            <Card className="border-border/60 shadow-sm bg-card">
               <CardHeader className="border-b border-border/50 bg-muted/10">
                 <CardTitle className="text-lg flex items-center">
                   <SettingsIcon className="w-5 h-5 mr-2 text-primary" />
@@ -88,7 +88,7 @@ export default function AdminPage() {
                 <div className="grid gap-4 md:grid-cols-2">
                   <div className="space-y-2">
                     <label className="text-sm font-medium text-foreground block">Niveau de détail des réponses</label>
-                    <select className="w-full bg-white border border-border rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20">
+                    <select className="w-full bg-card border border-border rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20">
                       <option>Concis</option>
                       <option>Standard</option>
                       <option>Détaillé</option>
@@ -96,7 +96,7 @@ export default function AdminPage() {
                   </div>
                   <div className="space-y-2">
                     <label className="text-sm font-medium text-foreground block">Langue de sortie par défaut</label>
-                    <select className="w-full bg-white border border-border rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20">
+                    <select className="w-full bg-card border border-border rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20">
                       <option>Français</option>
                       <option>Anglais</option>
                     </select>
@@ -110,7 +110,7 @@ export default function AdminPage() {
                   </div>
                   <label className="relative inline-flex items-center cursor-pointer">
                     <input type="checkbox" className="sr-only peer" defaultChecked />
-                    <div className="w-11 h-6 bg-muted peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-primary/20 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
+                    <div className="w-11 h-6 bg-muted peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-primary/20 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-border after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
                   </label>
                 </div>
 
@@ -123,10 +123,10 @@ export default function AdminPage() {
               </CardContent>
             </Card>
 
-            <Card className="border-border/60 shadow-sm bg-white">
+            <Card className="border-border/60 shadow-sm bg-card">
               <CardHeader className="border-b border-border/50 bg-muted/10">
                 <CardTitle className="text-lg flex items-center">
-                  <Monitor className="w-5 h-5 mr-2 text-slate-500" />
+                  <Monitor className="w-5 h-5 mr-2 text-muted-foreground" />
                   Connexions récentes
                 </CardTitle>
               </CardHeader>
@@ -194,7 +194,7 @@ function ExportCard() {
   };
 
   return (
-    <Card className="border-border/60 shadow-sm bg-white">
+    <Card className="border-border/60 shadow-sm bg-card">
       <CardHeader className="border-b border-border/50 bg-muted/10">
         <CardTitle className="text-lg flex items-center">
           <Package className="w-5 h-5 mr-2 text-primary" />
@@ -209,7 +209,7 @@ function ExportCard() {
           <p className="text-sm text-muted-foreground mb-2 font-medium">Fichiers exclus de l'archive :</p>
           <div className="flex flex-wrap gap-2">
             {["node_modules", ".git", "dist", ".local", ".env", ".cache"].map(item => (
-              <span key={item} className="px-2 py-1 bg-slate-100 text-slate-600 rounded text-xs font-mono border border-slate-200">
+              <span key={item} className="px-2 py-1 bg-muted text-muted-foreground rounded text-xs font-mono border border-border">
                 {item}
               </span>
             ))}
@@ -273,7 +273,7 @@ function GitPushCard() {
   };
 
   return (
-    <Card className="border-border/60 shadow-sm bg-white">
+    <Card className="border-border/60 shadow-sm bg-card">
       <CardHeader className="border-b border-border/50 bg-muted/10">
         <CardTitle className="text-lg flex items-center">
           <GitBranch className="w-5 h-5 mr-2 text-primary" />
@@ -293,7 +293,7 @@ function GitPushCard() {
               onChange={(e) => setRemoteUrl(e.target.value)}
               placeholder="https://github.com/organisation/oasis-projet.git"
               required
-              className="w-full bg-white border border-border rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
+              className="w-full bg-card border border-border rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
             />
           </div>
 
@@ -305,7 +305,7 @@ function GitPushCard() {
                 value={branch}
                 onChange={(e) => setBranch(e.target.value)}
                 placeholder="main"
-                className="w-full bg-white border border-border rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
+                className="w-full bg-card border border-border rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
               />
             </div>
             <div className="space-y-2">
@@ -315,7 +315,7 @@ function GitPushCard() {
                 value={token}
                 onChange={(e) => setToken(e.target.value)}
                 placeholder="ghp_xxxx... (optionnel)"
-                className="w-full bg-white border border-border rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
+                className="w-full bg-card border border-border rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
               />
               <p className="text-[11px] text-muted-foreground">
                 Personal Access Token avec les scopes <code className="bg-muted px-1 rounded text-[10px]">repo</code> + <code className="bg-muted px-1 rounded text-[10px]">workflow</code>
