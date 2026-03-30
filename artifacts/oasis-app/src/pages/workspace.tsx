@@ -1,9 +1,9 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { AppLayout } from "@/components/layout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useGetProject, useRunAnalysis, useSubmitFeedback, type AnalysisResult } from "@workspace/api-client-react";
-import { useRoute } from "wouter";
+import { useRoute, useLocation } from "wouter";
 import { 
   Cpu, FileText, Send, Sparkles, AlertTriangle, CheckCircle2, 
   GitMerge, Server, ThumbsUp, ThumbsDown, Loader2, ArrowRight
@@ -24,7 +24,14 @@ const TASK_TYPES = [
 export default function WorkspacePage() {
   const [, params] = useRoute("/workspace/:projectId");
   const projectId = params?.projectId || "";
-  
+  const [, navigate] = useLocation();
+
+  useEffect(() => {
+    if (!projectId) {
+      navigate("/clients");
+    }
+  }, [projectId, navigate]);
+
   const { data: project } = useGetProject(projectId);
   const runAnalysis = useRunAnalysis();
   
