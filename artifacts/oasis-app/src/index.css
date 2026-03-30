@@ -3,6 +3,8 @@
 @import "tw-animate-css";
 @plugin "@tailwindcss/typography";
 
+@custom-variant dark (&:where(.dark, .dark *));
+
 @theme inline {
   --color-background: hsl(var(--background));
   --color-foreground: hsl(var(--foreground));
@@ -104,6 +106,47 @@
   --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1);
 }
 
+.dark {
+  --primary: 194 100% 50%;
+  --primary-foreground: 0 0% 100%;
+
+  --background: 222 47% 9%;
+  --foreground: 210 40% 96%;
+
+  --card: 222 47% 12%;
+  --card-foreground: 210 40% 96%;
+  --card-border: 217 33% 20%;
+
+  --popover: 222 47% 12%;
+  --popover-foreground: 210 40% 96%;
+  --popover-border: 217 33% 20%;
+
+  --secondary: 217 33% 17%;
+  --secondary-foreground: 210 40% 96%;
+
+  --muted: 217 33% 17%;
+  --muted-foreground: 215 20% 60%;
+
+  --accent: 194 60% 18%;
+  --accent-foreground: 194 100% 70%;
+
+  --destructive: 0 72% 55%;
+  --destructive-foreground: 0 0% 100%;
+
+  --border: 217 33% 20%;
+  --input: 217 33% 20%;
+  --ring: 194 100% 50%;
+
+  --sidebar: 222 47% 11%;
+  --sidebar-foreground: 210 40% 96%;
+  --sidebar-border: 217 33% 20%;
+  --sidebar-primary: 194 100% 50%;
+  --sidebar-primary-foreground: 0 0% 100%;
+  --sidebar-accent: 194 60% 18%;
+  --sidebar-accent-foreground: 194 100% 70%;
+  --sidebar-ring: 194 100% 50%;
+}
+
 @keyframes fade-in {
   from { opacity: 0; }
   to { opacity: 1; }
@@ -140,6 +183,6 @@
 
 @layer utilities {
   .glass-panel {
-    @apply bg-white/80 backdrop-blur-md border border-white/20 shadow-sm;
+    @apply bg-white/80 dark:bg-card/80 backdrop-blur-md border border-white/20 dark:border-border/40 shadow-sm;
   }
 }

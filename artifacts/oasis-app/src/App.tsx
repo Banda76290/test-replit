@@ -2,7 +2,8 @@ import { Switch, Route, Router as WouterRouter } from "wouter";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { AuthProvider } from "@/hooks/use-auth";
+import { AuthProvider, useAuth } from "@/hooks/use-auth";
+import { ThemeProvider } from "@/hooks/use-theme";
 import { ProtectedRoute } from "@/components/protected-route";
 
 // Pages
@@ -21,8 +22,6 @@ function Router() {
   return (
     <Switch>
       <Route path="/login" component={LoginPage} />
-      
-      {/* Protected Routes */}
       <Route path="/">
         <ProtectedRoute><DashboardPage /></ProtectedRoute>
       </Route>
@@ -41,9 +40,18 @@ function Router() {
       <Route path="/admin">
         <ProtectedRoute><AdminPage /></ProtectedRoute>
       </Route>
-      
       <Route component={NotFound} />
     </Switch>
+  );
+}
+
+function ThemedApp() {
+  const { user } = useAuth();
+  return (
+    <ThemeProvider userId={user?.id}>
+      <Router />
+      <Toaster />
+    </ThemeProvider>
   );
 }
 
@@ -53,8 +61,7 @@ function App() {
       <TooltipProvider>
         <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, "")}>
           <AuthProvider>
-            <Router />
-            <Toaster />
+            <ThemedApp />
           </AuthProvider>
         </WouterRouter>
       </TooltipProvider>
