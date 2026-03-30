@@ -14,17 +14,15 @@ export default function LoginPage() {
     setIsLoading(true);
     setError("");
     try {
-      // Simulate SSO flow by passing a mock email
       await login({ email: "developer@oasis.internal" });
     } catch (err) {
-      setError("Authentication failed. Please try again or contact IT support.");
+      setError("Échec de l'authentification. Veuillez réessayer ou contacter le support IT.");
       setIsLoading(false);
     }
   };
 
   return (
     <div className="min-h-screen bg-muted/30 flex flex-col justify-center items-center p-4 relative overflow-hidden">
-      {/* Decorative background elements */}
       <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] rounded-full bg-primary/5 blur-[100px]" />
       <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] rounded-full bg-primary/10 blur-[100px]" />
       
@@ -36,8 +34,8 @@ export default function LoginPage() {
 
         <Card className="border-none shadow-xl shadow-black/5 bg-white/90 backdrop-blur-xl">
           <CardHeader className="text-center space-y-2 pb-6 border-b border-border/50">
-            <CardTitle className="text-2xl">Enterprise Portal</CardTitle>
-            <CardDescription>Internal access for OASIS engineers & managers</CardDescription>
+            <CardTitle className="text-2xl">Portail Entreprise</CardTitle>
+            <CardDescription>Accès interne pour les ingénieurs et managers OASIS</CardDescription>
           </CardHeader>
           <CardContent className="pt-8 pb-8 flex flex-col items-center">
             
@@ -60,16 +58,16 @@ export default function LoginPage() {
               {isLoading ? (
                 <>
                   <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-                  Authenticating...
+                  Authentification en cours...
                 </>
               ) : (
-                "Sign in with Internal SSO"
+                "Se connecter via SSO interne"
               )}
             </Button>
             
             <p className="mt-6 text-xs text-muted-foreground text-center">
-              By logging in, you agree to the OASIS internal usage policy. 
-              Unauthorized access is strictly prohibited.
+              En vous connectant, vous acceptez la politique d'utilisation interne OASIS.
+              Tout accès non autorisé est strictement interdit.
             </p>
           </CardContent>
         </Card>

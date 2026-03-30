@@ -1,6 +1,6 @@
 kind = "web"
 previewPath = "/"
-title = "OASIS Projet"
+title = "OASIS IA"
 version = "1.0.0"
 id = "artifacts/oasis-app"
 router = "path"

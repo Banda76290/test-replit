@@ -8,7 +8,7 @@ const router: IRouter = Router();
 
 router.get("/dashboard/summary", (_req, res) => {
   res.json({
-    welcomeMessage: "Welcome back, Alexandre",
+    welcomeMessage: "Bon retour, Alexandre",
     totalClients: mockClients.length,
     totalProjects: mockProjects.length,
     totalAnalyses: mockAnalyses.length,
@@ -18,18 +18,18 @@ router.get("/dashboard/summary", (_req, res) => {
     recentActivities: mockActivities.slice(0, 5),
     suggestedActions: [
       {
-        label: "Review critical checkout fix",
-        description: "NeoShop checkout crash requires immediate attention",
+        label: "Examiner le correctif checkout critique",
+        description: "Le crash checkout NeoShop nécessite une attention immédiate",
         link: "/workspace/prj-004",
       },
       {
-        label: "Complete Apple Pay analysis",
-        description: "Maison Éclat checkout redesign — finalize payment integration plan",
+        label: "Finaliser l'analyse Apple Pay",
+        description: "Refonte checkout Maison Éclat — finaliser le plan d'intégration paiement",
         link: "/workspace/prj-001",
       },
       {
-        label: "Check shipping connector progress",
-        description: "TechFlow Distribution — carrier integration update",
+        label: "Vérifier l'avancement du connecteur d'expédition",
+        description: "TechFlow Distribution — mise à jour de l'intégration transporteurs",
         link: "/workspace/prj-003",
       },
     ],

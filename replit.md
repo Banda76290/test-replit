@@ -1,4 +1,8 @@
-# OASIS Projet — Internal Meta SaaS Platform
+# OASIS Projet — Plateforme Meta SaaS Interne
+
+## Langue
+
+**IMPORTANT : L'intégralité de l'application est en français.** Toute nouvelle fonctionnalité, texte, label, message d'erreur, placeholder, données mock, etc. doit être rédigé en français. La langue HTML est `lang="fr"`. Les dates utilisent le locale `fr` (date-fns).
 
 ## Overview
 

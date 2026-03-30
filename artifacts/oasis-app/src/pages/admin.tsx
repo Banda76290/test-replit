@@ -13,7 +13,6 @@ export default function AdminPage() {
 
   const handleSave = async () => {
     setIsSaving(true);
-    // Simulate save delay
     await new Promise(r => setTimeout(r, 800));
     setIsSaving(false);
   };
@@ -32,12 +31,11 @@ export default function AdminPage() {
     <AppLayout>
       <div className="max-w-5xl mx-auto space-y-6">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight text-foreground">Admin & Profile</h1>
-          <p className="text-muted-foreground mt-1">Manage your OASIS account settings and preferences.</p>
+          <h1 className="text-3xl font-bold tracking-tight text-foreground">Administration & Profil</h1>
+          <p className="text-muted-foreground mt-1">Gérez votre compte OASIS, vos paramètres et vos préférences.</p>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {/* Profile Card */}
           <div className="md:col-span-1 space-y-6">
             <Card className="border-border/60 shadow-sm bg-white overflow-hidden text-center">
               <div className="h-24 bg-gradient-to-r from-primary/80 to-primary"></div>
@@ -52,11 +50,11 @@ export default function AdminPage() {
                 
                 <div className="mt-6 flex flex-col gap-2">
                   <div className="flex justify-between items-center px-3 py-2 bg-muted/30 rounded-md text-sm border border-border/50">
-                    <span className="text-muted-foreground flex items-center"><User className="w-4 h-4 mr-2" /> Role</span>
+                    <span className="text-muted-foreground flex items-center"><User className="w-4 h-4 mr-2" /> Rôle</span>
                     <span className="font-medium text-foreground">{profile.user.role}</span>
                   </div>
                   <div className="flex justify-between items-center px-3 py-2 bg-muted/30 rounded-md text-sm border border-border/50">
-                    <span className="text-muted-foreground flex items-center"><Shield className="w-4 h-4 mr-2" /> Team</span>
+                    <span className="text-muted-foreground flex items-center"><Shield className="w-4 h-4 mr-2" /> Équipe</span>
                     <span className="font-medium text-foreground">{profile.user.team}</span>
                   </div>
                 </div>
@@ -64,39 +62,38 @@ export default function AdminPage() {
             </Card>
           </div>
 
-          {/* Settings Cards */}
           <div className="md:col-span-2 space-y-6">
             <Card className="border-border/60 shadow-sm bg-white">
               <CardHeader className="border-b border-border/50 bg-muted/10">
                 <CardTitle className="text-lg flex items-center">
                   <SettingsIcon className="w-5 h-5 mr-2 text-primary" />
-                  Workspace Preferences
+                  Préférences de l'espace de travail
                 </CardTitle>
-                <CardDescription>Customize how OASIS responds and behaves</CardDescription>
+                <CardDescription>Personnalisez le comportement et les réponses d'OASIS</CardDescription>
               </CardHeader>
               <CardContent className="p-6 space-y-6">
                 <div className="grid gap-4 md:grid-cols-2">
                   <div className="space-y-2">
-                    <label className="text-sm font-medium text-foreground block">Response Detail Level</label>
+                    <label className="text-sm font-medium text-foreground block">Niveau de détail des réponses</label>
                     <select className="w-full bg-white border border-border rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20">
-                      <option>Concise</option>
+                      <option>Concis</option>
                       <option>Standard</option>
-                      <option>Comprehensive</option>
+                      <option>Détaillé</option>
                     </select>
                   </div>
                   <div className="space-y-2">
-                    <label className="text-sm font-medium text-foreground block">Default Output Language</label>
+                    <label className="text-sm font-medium text-foreground block">Langue de sortie par défaut</label>
                     <select className="w-full bg-white border border-border rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20">
-                      <option>English</option>
-                      <option>French</option>
+                      <option>Français</option>
+                      <option>Anglais</option>
                     </select>
                   </div>
                 </div>
 
                 <div className="pt-4 border-t border-border/50 flex items-center justify-between">
                   <div>
-                    <h4 className="text-sm font-medium text-foreground">Email Notifications</h4>
-                    <p className="text-xs text-muted-foreground">Receive alerts when long analyses complete</p>
+                    <h4 className="text-sm font-medium text-foreground">Notifications par e-mail</h4>
+                    <p className="text-xs text-muted-foreground">Recevoir des alertes lorsque les analyses longues sont terminées</p>
                   </div>
                   <label className="relative inline-flex items-center cursor-pointer">
                     <input type="checkbox" className="sr-only peer" defaultChecked />
@@ -107,7 +104,7 @@ export default function AdminPage() {
                 <div className="flex justify-end pt-4">
                   <Button onClick={handleSave} disabled={isSaving} className="shadow-sm">
                     {isSaving ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Save className="w-4 h-4 mr-2" />}
-                    Save Changes
+                    Enregistrer les modifications
                   </Button>
                 </div>
               </CardContent>
@@ -117,7 +114,7 @@ export default function AdminPage() {
               <CardHeader className="border-b border-border/50 bg-muted/10">
                 <CardTitle className="text-lg flex items-center">
                   <Monitor className="w-5 h-5 mr-2 text-slate-500" />
-                  Recent Logins
+                  Connexions récentes
                 </CardTitle>
               </CardHeader>
               <CardContent className="p-0">
@@ -126,10 +123,10 @@ export default function AdminPage() {
                     <div key={i} className="flex justify-between items-center p-4 text-sm hover:bg-muted/10 transition-colors">
                       <div>
                         <p className="font-medium text-foreground">{login.device}</p>
-                        <p className="text-xs text-muted-foreground mt-0.5">IP: {login.ip}</p>
+                        <p className="text-xs text-muted-foreground mt-0.5">IP : {login.ip}</p>
                       </div>
                       <span className="text-xs text-muted-foreground">
-                        {new Date(login.date).toLocaleDateString()} {new Date(login.date).toLocaleTimeString()}
+                        {new Date(login.date).toLocaleDateString('fr-FR')} {new Date(login.date).toLocaleTimeString('fr-FR')}
                       </span>
                     </div>
                   ))}

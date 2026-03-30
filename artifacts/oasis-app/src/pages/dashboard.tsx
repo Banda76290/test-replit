@@ -3,6 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useGetDashboardSummary, useGetMe } from "@workspace/api-client-react";
 import { Activity as ActivityIcon, Users, FolderKanban, Sparkles, ArrowRight, Clock } from "lucide-react";
 import { format } from "date-fns";
+import { fr } from "date-fns/locale";
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
 
@@ -30,36 +31,35 @@ export default function DashboardPage() {
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
           <div>
             <h1 className="text-3xl font-bold tracking-tight text-foreground">
-              {summary.welcomeMessage.replace('{name}', user?.name || 'Developer')}
+              {summary.welcomeMessage}
             </h1>
             <p className="text-muted-foreground mt-1 text-lg">
-              Here's an overview of your current context.
+              Voici un aperçu de votre contexte actuel.
             </p>
           </div>
           <Link href="/clients">
             <Button className="shadow-sm shadow-primary/20">
               <Sparkles className="mr-2 h-4 w-4" />
-              New Analysis
+              Nouvelle analyse
             </Button>
           </Link>
         </div>
 
-        {/* Stats Row */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <StatCard 
-            title="Active Clients" 
+            title="Clients actifs" 
             value={summary.totalClients} 
             icon={Users} 
             color="bg-blue-50 text-blue-600" 
           />
           <StatCard 
-            title="Projects" 
+            title="Projets" 
             value={summary.totalProjects} 
             icon={FolderKanban} 
             color="bg-emerald-50 text-emerald-600" 
           />
           <StatCard 
-            title="Analyses Run" 
+            title="Analyses réalisées" 
             value={summary.totalAnalyses} 
             icon={ActivityIcon} 
             color="bg-purple-50 text-purple-600" 
@@ -67,18 +67,17 @@ export default function DashboardPage() {
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Main Content Area - Left 2 cols */}
           <div className="lg:col-span-2 space-y-8">
             <Card className="shadow-sm border-border/50 overflow-hidden">
               <CardHeader className="bg-muted/30 border-b border-border/50 pb-4">
                 <div className="flex items-center justify-between">
                   <CardTitle className="flex items-center text-lg">
                     <Clock className="w-5 h-5 mr-2 text-primary" />
-                    Recent Activity
+                    Activité récente
                   </CardTitle>
                   <Link href="/history">
                     <Button variant="ghost" size="sm" className="text-muted-foreground hover:text-primary">
-                      View all <ArrowRight className="ml-1 w-4 h-4" />
+                      Tout voir <ArrowRight className="ml-1 w-4 h-4" />
                     </Button>
                   </Link>
                 </div>
@@ -97,7 +96,7 @@ export default function DashboardPage() {
                         </div>
                       </div>
                       <span className="text-xs text-muted-foreground shrink-0 whitespace-nowrap">
-                        {format(new Date(activity.timestamp), 'MMM d, HH:mm')}
+                        {format(new Date(activity.timestamp), 'd MMM, HH:mm', { locale: fr })}
                       </span>
                     </div>
                   ))}
@@ -107,7 +106,7 @@ export default function DashboardPage() {
 
             <Card className="shadow-sm border-border/50">
               <CardHeader className="pb-4">
-                <CardTitle className="text-lg">Recent Projects</CardTitle>
+                <CardTitle className="text-lg">Projets récents</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -117,7 +116,9 @@ export default function DashboardPage() {
                         <div className="flex justify-between items-start mb-2">
                           <h4 className="font-semibold text-foreground group-hover:text-primary transition-colors">{project.name}</h4>
                           <span className={`px-2 py-1 rounded-full text-[10px] font-medium ${
-                            project.health === 'Healthy' ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'
+                            project.health === 'bon' ? 'bg-emerald-100 text-emerald-700' : 
+                            project.health === 'critique' ? 'bg-red-100 text-red-700' :
+                            'bg-amber-100 text-amber-700'
                           }`}>
                             {project.health}
                           </span>
@@ -138,13 +139,12 @@ export default function DashboardPage() {
             </Card>
           </div>
 
-          {/* Sidebar Area - Right 1 col */}
           <div className="space-y-8">
             <Card className="shadow-sm border-border/50 bg-primary/5 border-primary/10">
               <CardHeader>
                 <CardTitle className="text-lg text-primary flex items-center">
                   <Sparkles className="w-5 h-5 mr-2" />
-                  Suggested Actions
+                  Actions suggérées
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">

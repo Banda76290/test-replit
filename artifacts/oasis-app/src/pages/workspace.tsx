@@ -11,11 +11,14 @@ import {
 import { cn } from "@/lib/utils";
 
 const TASK_TYPES = [
-  { id: "analyze-need", label: "Analyze Client Need" },
-  { id: "propose-implementation", label: "Propose Implementation" },
-  { id: "analyze-impact", label: "Impact Analysis" },
-  { id: "generate-plan", label: "Generate Tech Plan" },
-  { id: "produce-diff", label: "Produce Code Diff" }
+  { id: "analyze-need", label: "Analyser un besoin" },
+  { id: "propose-implementation", label: "Proposer une implémentation" },
+  { id: "analyze-impact", label: "Analyse d'impact" },
+  { id: "generate-plan", label: "Générer un plan technique" },
+  { id: "generate-docs", label: "Générer la documentation" },
+  { id: "prepare-response", label: "Préparer une réponse technique" },
+  { id: "propose-fix", label: "Proposer un correctif" },
+  { id: "produce-diff", label: "Produire un diff de code" },
 ];
 
 export default function WorkspacePage() {
@@ -44,7 +47,7 @@ export default function WorkspacePage() {
       setResult(res);
       setActiveTab("summary");
     } catch (e) {
-      console.error("Analysis failed", e);
+      console.error("Échec de l'analyse", e);
     }
   };
 
@@ -54,28 +57,27 @@ export default function WorkspacePage() {
         <div className="flex items-center justify-between mb-6 shrink-0">
           <div>
             <h1 className="text-2xl font-bold tracking-tight text-foreground flex items-center">
-              OASIS Workspace
+              Espace de travail OASIS
             </h1>
             <p className="text-sm text-muted-foreground mt-1 flex items-center gap-2">
-              Context: <span className="font-semibold text-primary">{project?.name || "Loading..."}</span>
-              <span className="px-2 py-0.5 rounded bg-muted text-[10px] uppercase font-bold tracking-wider">Secure Env</span>
+              Contexte : <span className="font-semibold text-primary">{project?.name || "Chargement..."}</span>
+              <span className="px-2 py-0.5 rounded bg-muted text-[10px] uppercase font-bold tracking-wider">Env. sécurisé</span>
             </p>
           </div>
         </div>
 
         <div className="flex-1 grid grid-cols-1 lg:grid-cols-12 gap-6 min-h-0">
-          {/* Input Panel */}
           <div className="lg:col-span-4 flex flex-col gap-6 overflow-y-auto pr-2 pb-6">
             <Card className="border-border/60 shadow-sm shrink-0">
               <CardHeader className="bg-muted/30 pb-4 border-b border-border/50">
                 <CardTitle className="text-base flex items-center">
                   <Cpu className="w-4 h-4 mr-2 text-primary" />
-                  Configure Analysis
+                  Configurer l'analyse
                 </CardTitle>
               </CardHeader>
               <CardContent className="pt-6 space-y-5">
                 <div>
-                  <label className="text-sm font-semibold text-foreground mb-2 block">Task Type</label>
+                  <label className="text-sm font-semibold text-foreground mb-2 block">Type de tâche</label>
                   <div className="grid grid-cols-1 gap-2">
                     {TASK_TYPES.map(type => (
                       <button
@@ -95,18 +97,18 @@ export default function WorkspacePage() {
                 </div>
 
                 <div>
-                  <label className="text-sm font-semibold text-foreground mb-2 block">Prompt / Request</label>
+                  <label className="text-sm font-semibold text-foreground mb-2 block">Requête / Demande</label>
                   <textarea
                     value={prompt}
                     onChange={(e) => setPrompt(e.target.value)}
-                    placeholder="Describe what you want the AI to analyze or build..."
+                    placeholder="Décrivez ce que vous souhaitez que l'IA analyse ou construise..."
                     className="w-full h-32 p-3 bg-muted/20 border border-border rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary resize-none transition-all"
                   />
                 </div>
 
                 <div className="border-2 border-dashed border-border/60 rounded-md p-4 text-center bg-muted/10">
                   <FileText className="w-6 h-6 text-muted-foreground mx-auto mb-2 opacity-50" />
-                  <p className="text-xs text-muted-foreground">Drag & drop documents here or click to browse</p>
+                  <p className="text-xs text-muted-foreground">Glissez-déposez vos documents ici ou cliquez pour parcourir</p>
                 </div>
 
                 <Button 
@@ -115,16 +117,15 @@ export default function WorkspacePage() {
                   className="w-full h-11 text-base shadow-md"
                 >
                   {runAnalysis.isPending ? (
-                    <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Processing...</>
+                    <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Traitement en cours...</>
                   ) : (
-                    <><Sparkles className="w-4 h-4 mr-2" /> Run AI Analysis</>
+                    <><Sparkles className="w-4 h-4 mr-2" /> Lancer l'analyse IA</>
                   )}
                 </Button>
               </CardContent>
             </Card>
           </div>
 
-          {/* Results Panel */}
           <div className="lg:col-span-8 flex flex-col h-full bg-white rounded-xl border border-border/60 shadow-sm overflow-hidden">
             {runAnalysis.isPending ? (
               <div className="flex-1 flex flex-col items-center justify-center bg-muted/10">
@@ -132,12 +133,11 @@ export default function WorkspacePage() {
                   <div className="w-16 h-16 rounded-full border-4 border-primary/20 border-t-primary animate-spin"></div>
                   <Sparkles className="w-6 h-6 text-primary absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 animate-pulse" />
                 </div>
-                <h3 className="text-lg font-medium text-foreground mt-6">Analyzing Context...</h3>
-                <p className="text-sm text-muted-foreground mt-2">Retrieving codebase, history, and client specs.</p>
+                <h3 className="text-lg font-medium text-foreground mt-6">Analyse du contexte en cours...</h3>
+                <p className="text-sm text-muted-foreground mt-2">Récupération du code source, de l'historique et des spécifications client.</p>
               </div>
             ) : result ? (
               <div className="flex flex-col h-full overflow-hidden animate-fade-in">
-                {/* Header/Tabs */}
                 <div className="bg-slate-900 text-white p-6 shrink-0">
                   <div className="flex justify-between items-start mb-6">
                     <div>
@@ -147,7 +147,7 @@ export default function WorkspacePage() {
                         </span>
                         <span className="flex items-center text-xs text-slate-400">
                           <CheckCircle2 className="w-3 h-3 text-emerald-400 mr-1" />
-                          Confidence: {result.confidenceScore}%
+                          Confiance : {Math.round((result.confidenceScore || 0) * 100)}%
                         </span>
                       </div>
                       <h2 className="text-xl font-semibold leading-tight">{result.executiveSummary}</h2>
@@ -155,20 +155,18 @@ export default function WorkspacePage() {
                   </div>
 
                   <div className="flex gap-6 border-b border-slate-700/50">
-                    <TabButton active={activeTab === 'summary'} onClick={() => setActiveTab('summary')}>Overview</TabButton>
-                    {result.technicalPlan && <TabButton active={activeTab === 'plan'} onClick={() => setActiveTab('plan')}>Tech Plan</TabButton>}
-                    <TabButton active={activeTab === 'sources'} onClick={() => setActiveTab('sources')}>Context Sources</TabButton>
+                    <TabButton active={activeTab === 'summary'} onClick={() => setActiveTab('summary')}>Synthèse</TabButton>
+                    {result.technicalPlan && <TabButton active={activeTab === 'plan'} onClick={() => setActiveTab('plan')}>Plan technique</TabButton>}
+                    <TabButton active={activeTab === 'sources'} onClick={() => setActiveTab('sources')}>Sources contextuelles</TabButton>
                   </div>
                 </div>
 
-                {/* Content Area */}
                 <div className="flex-1 overflow-y-auto p-6 bg-slate-50/50">
                   {activeTab === 'summary' && <SummaryView result={result} />}
                   {activeTab === 'plan' && result.technicalPlan && <PlanView plan={result.technicalPlan} />}
                   {activeTab === 'sources' && <SourcesView analysisId={result.id} />}
                 </div>
 
-                {/* Feedback Footer */}
                 <FeedbackPanel analysisId={result.id} />
               </div>
             ) : (
@@ -176,9 +174,9 @@ export default function WorkspacePage() {
                 <div className="w-16 h-16 rounded-2xl bg-white shadow-sm flex items-center justify-center mb-6">
                   <Sparkles className="w-8 h-8 text-primary" />
                 </div>
-                <h2 className="text-xl font-bold text-foreground">Ready for Analysis</h2>
+                <h2 className="text-xl font-bold text-foreground">Prêt pour l'analyse</h2>
                 <p className="text-muted-foreground mt-2 max-w-md">
-                  Configure your request on the left. The OASIS AI will analyze the client context, existing codebase, and propose solutions.
+                  Configurez votre requête sur la gauche. L'IA OASIS analysera le contexte client, le code source existant et proposera des solutions.
                 </p>
               </div>
             )}
@@ -209,7 +207,7 @@ function SummaryView({ result }: { result: AnalysisResult }) {
     <div className="space-y-8 animate-fade-in">
       {result.requestUnderstanding && (
         <section>
-          <h3 className="text-sm font-bold text-slate-800 uppercase tracking-wider mb-3">Understanding</h3>
+          <h3 className="text-sm font-bold text-slate-800 uppercase tracking-wider mb-3">Compréhension de la demande</h3>
           <p className="text-slate-700 leading-relaxed bg-white p-4 rounded-lg border border-slate-200 shadow-sm">
             {result.requestUnderstanding}
           </p>
@@ -221,7 +219,7 @@ function SummaryView({ result }: { result: AnalysisResult }) {
           <section>
             <h3 className="text-sm font-bold text-slate-800 uppercase tracking-wider mb-3 flex items-center">
               <Server className="w-4 h-4 mr-2 text-primary" />
-              Impacted Components
+              Composants impactés
             </h3>
             <ul className="space-y-2">
               {result.impactedComponents.map((comp, i) => (
@@ -238,7 +236,7 @@ function SummaryView({ result }: { result: AnalysisResult }) {
           <section>
             <h3 className="text-sm font-bold text-slate-800 uppercase tracking-wider mb-3 flex items-center">
               <AlertTriangle className="w-4 h-4 mr-2 text-amber-500" />
-              Identified Risks
+              Risques identifiés
             </h3>
             <ul className="space-y-2">
               {result.identifiedRisks.map((risk, i) => (
@@ -254,7 +252,7 @@ function SummaryView({ result }: { result: AnalysisResult }) {
 
       {result.recommendedApproach && (
         <section>
-          <h3 className="text-sm font-bold text-slate-800 uppercase tracking-wider mb-3">Recommended Approach</h3>
+          <h3 className="text-sm font-bold text-slate-800 uppercase tracking-wider mb-3">Approche recommandée</h3>
           <div className="bg-primary/5 p-5 rounded-lg border border-primary/20 text-slate-800 leading-relaxed">
             {result.recommendedApproach}
           </div>
@@ -269,17 +267,17 @@ function PlanView({ plan }: { plan: any }) {
     <div className="space-y-6 animate-fade-in">
       <div className="flex gap-4 mb-6">
         <div className="bg-white px-4 py-2 rounded-lg border border-slate-200 shadow-sm flex-1">
-          <p className="text-xs text-slate-500 font-medium uppercase tracking-wider mb-1">Complexity</p>
+          <p className="text-xs text-slate-500 font-medium uppercase tracking-wider mb-1">Complexité</p>
           <p className="font-semibold text-slate-800">{plan.complexityEstimate}</p>
         </div>
         <div className="bg-white px-4 py-2 rounded-lg border border-slate-200 shadow-sm flex-1">
-          <p className="text-xs text-slate-500 font-medium uppercase tracking-wider mb-1">Effort</p>
+          <p className="text-xs text-slate-500 font-medium uppercase tracking-wider mb-1">Effort estimé</p>
           <p className="font-semibold text-slate-800">{plan.effortEstimate}</p>
         </div>
       </div>
 
       <section>
-        <h3 className="text-sm font-bold text-slate-800 uppercase tracking-wider mb-4">Action Sequence</h3>
+        <h3 className="text-sm font-bold text-slate-800 uppercase tracking-wider mb-4">Séquence d'actions</h3>
         <div className="space-y-3 relative before:absolute before:inset-0 before:ml-5 before:-translate-x-px md:before:mx-auto md:before:translate-x-0 before:h-full before:w-0.5 before:bg-gradient-to-b before:from-transparent before:via-slate-300 before:to-transparent">
           {plan.actionSequence.map((step: string, i: number) => (
             <div key={i} className="relative flex items-center justify-between md:justify-normal md:odd:flex-row-reverse group is-active">
@@ -298,27 +296,26 @@ function PlanView({ plan }: { plan: any }) {
 }
 
 function SourcesView({ analysisId }: { analysisId: string }) {
-  // Normally fetch with useGetSources(analysisId), hardcoding a nice empty state for mock
   return (
     <div className="animate-fade-in space-y-4">
       <div className="p-4 bg-white rounded-lg border border-slate-200 shadow-sm">
         <div className="flex items-center justify-between mb-2">
-          <span className="text-xs font-bold uppercase text-primary bg-primary/10 px-2 py-1 rounded">Source Code</span>
-          <span className="text-xs text-slate-500">Relevance: 95%</span>
+          <span className="text-xs font-bold uppercase text-primary bg-primary/10 px-2 py-1 rounded">Code source</span>
+          <span className="text-xs text-slate-500">Pertinence : 95%</span>
         </div>
         <h4 className="font-semibold text-slate-800 mb-2">api/src/services/billing.ts</h4>
         <p className="text-sm text-slate-600 font-mono bg-slate-50 p-2 rounded">
-          Extracted context regarding the current payment webhook implementation.
+          Contexte extrait concernant l'implémentation actuelle du webhook de paiement.
         </p>
       </div>
       <div className="p-4 bg-white rounded-lg border border-slate-200 shadow-sm">
         <div className="flex items-center justify-between mb-2">
-          <span className="text-xs font-bold uppercase text-purple-600 bg-purple-100 px-2 py-1 rounded">Jira Ticket</span>
-          <span className="text-xs text-slate-500">Relevance: 88%</span>
+          <span className="text-xs font-bold uppercase text-purple-600 bg-purple-100 px-2 py-1 rounded">Ticket Jira</span>
+          <span className="text-xs text-slate-500">Pertinence : 88%</span>
         </div>
-        <h4 className="font-semibold text-slate-800 mb-2">PROJ-482: Update Stripe API Version</h4>
+        <h4 className="font-semibold text-slate-800 mb-2">PROJ-482 : Mise à jour de la version API Stripe</h4>
         <p className="text-sm text-slate-600 bg-slate-50 p-2 rounded">
-          Previous attempt to upgrade the API failed due to webhook signature mismatch.
+          La tentative précédente de mise à jour de l'API a échoué en raison d'une incompatibilité de signature webhook.
         </p>
       </div>
     </div>
@@ -342,7 +339,7 @@ function FeedbackPanel({ analysisId }: { analysisId: string }) {
       <div className="flex-1 w-full relative">
         <input 
           type="text" 
-          placeholder="Add a comment or adjustment request..." 
+          placeholder="Ajouter un commentaire ou une demande d'ajustement..." 
           value={comment}
           onChange={(e) => setComment(e.target.value)}
           className="w-full bg-muted/30 border border-border rounded-md px-4 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary"
@@ -350,13 +347,13 @@ function FeedbackPanel({ analysisId }: { analysisId: string }) {
       </div>
       <div className="flex items-center gap-2 w-full md:w-auto">
         <Button variant="outline" onClick={() => handleAction('reject')} className="text-destructive hover:bg-destructive/10 hover:text-destructive border-destructive/20 flex-1 md:flex-none">
-          <ThumbsDown className="w-4 h-4 mr-2" /> Reject
+          <ThumbsDown className="w-4 h-4 mr-2" /> Rejeter
         </Button>
         <Button variant="outline" onClick={() => handleAction('adjust')} className="flex-1 md:flex-none">
-          Adjust
+          Ajuster
         </Button>
         <Button onClick={() => handleAction('accept')} className="bg-emerald-600 hover:bg-emerald-700 text-white flex-1 md:flex-none">
-          <ThumbsUp className="w-4 h-4 mr-2" /> Accept & Proceed
+          <ThumbsUp className="w-4 h-4 mr-2" /> Accepter
         </Button>
       </div>
     </div>

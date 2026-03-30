@@ -5,6 +5,18 @@ import { useGetClients } from "@workspace/api-client-react";
 import { Search, Filter, ChevronRight, Briefcase } from "lucide-react";
 import { Link } from "wouter";
 
+const PRIORITY_LABELS: Record<string, string> = {
+  high: "Haute",
+  medium: "Moyenne",
+  low: "Basse",
+};
+
+const STATUS_LABELS: Record<string, string> = {
+  active: "Actif",
+  pending: "En attente",
+  inactive: "Inactif",
+};
+
 export default function ClientsPage() {
   const [search, setSearch] = useState("");
   const { data: clients, isLoading } = useGetClients({ search });
@@ -14,18 +26,17 @@ export default function ClientsPage() {
       <div className="max-w-7xl mx-auto space-y-6">
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <div>
-            <h1 className="text-3xl font-bold tracking-tight text-foreground">Client Portfolio</h1>
-            <p className="text-muted-foreground mt-1">Select a client to view their projects and start an analysis.</p>
+            <h1 className="text-3xl font-bold tracking-tight text-foreground">Portefeuille Clients</h1>
+            <p className="text-muted-foreground mt-1">Sélectionnez un client pour accéder à ses projets et lancer une analyse.</p>
           </div>
         </div>
 
-        {/* Filters */}
         <div className="flex gap-4">
           <div className="relative flex-1 max-w-md">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <input 
               type="text" 
-              placeholder="Search clients by name or sector..." 
+              placeholder="Rechercher par nom ou secteur..." 
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               className="w-full pl-10 pr-4 py-2.5 bg-white border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary shadow-sm transition-all"
@@ -33,7 +44,7 @@ export default function ClientsPage() {
           </div>
           <button className="flex items-center gap-2 px-4 py-2.5 bg-white border border-border rounded-lg text-sm font-medium hover:bg-muted/50 transition-colors shadow-sm">
             <Filter className="w-4 h-4" />
-            Filters
+            Filtres
           </button>
         </div>
 
@@ -58,11 +69,11 @@ export default function ClientsPage() {
                         </div>
                       </div>
                       <span className={`px-2.5 py-1 rounded-full text-xs font-semibold ${
-                        client.priority === 'High' ? 'bg-destructive/10 text-destructive' : 
-                        client.priority === 'Medium' ? 'bg-amber-100 text-amber-700' : 
+                        client.priority === 'high' ? 'bg-destructive/10 text-destructive' : 
+                        client.priority === 'medium' ? 'bg-amber-100 text-amber-700' : 
                         'bg-slate-100 text-slate-700'
                       }`}>
-                        {client.priority} Prio
+                        {PRIORITY_LABELS[client.priority] || client.priority}
                       </span>
                     </div>
 
@@ -70,20 +81,20 @@ export default function ClientsPage() {
                       <div className="grid grid-cols-2 gap-4">
                         <div className="bg-muted/30 rounded-lg p-3 border border-border/40">
                           <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold mb-1 flex items-center">
-                            <Briefcase className="w-3 h-3 mr-1" /> Projects
+                            <Briefcase className="w-3 h-3 mr-1" /> Projets
                           </p>
                           <p className="text-xl font-bold text-foreground">{client.projectCount}</p>
                         </div>
                         <div className="bg-muted/30 rounded-lg p-3 border border-border/40">
-                          <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold mb-1">Status</p>
-                          <p className="text-sm font-medium text-foreground mt-1.5">{client.contractStatus}</p>
+                          <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold mb-1">Statut</p>
+                          <p className="text-sm font-medium text-foreground mt-1.5">{STATUS_LABELS[client.contractStatus] || client.contractStatus}</p>
                         </div>
                       </div>
                       
                       <div className="flex items-center justify-between text-xs border-t border-border/50 pt-4">
-                        <span className="text-muted-foreground">Team: <span className="font-medium text-foreground">{client.assignedTeam}</span></span>
+                        <span className="text-muted-foreground">Équipe : <span className="font-medium text-foreground">{client.assignedTeam}</span></span>
                         <span className="text-primary font-medium flex items-center opacity-0 group-hover:opacity-100 transition-opacity -translate-x-2 group-hover:translate-x-0 duration-300">
-                          View Projects <ChevronRight className="w-4 h-4 ml-0.5" />
+                          Voir les projets <ChevronRight className="w-4 h-4 ml-0.5" />
                         </span>
                       </div>
                     </div>

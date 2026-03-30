@@ -12,9 +12,9 @@ export const mockDiffs: Record<string, object> = {
 export function PaymentStep({ onComplete }: PaymentStepProps) {
   return (
     <div className="payment-step">
-      <h3>Payment Information</h3>
+      <h3>Informations de paiement</h3>
       <CardElement options={cardStyle} />
-      <button onClick={handleSubmit}>Pay Now</button>
+      <button onClick={handleSubmit}>Payer maintenant</button>
     </div>
   );
 }`,
@@ -26,26 +26,26 @@ export function PaymentStep({ onComplete }: PaymentStepProps) {
 
   return (
     <div className="payment-step">
-      <h3>Payment Information</h3>
+      <h3>Informations de paiement</h3>
       {canMakePayment && (
         <div className="digital-wallet-section">
           <PaymentRequestButtonElement options={{ paymentRequest }} />
-          <div className="divider">or pay with card</div>
+          <div className="divider">ou payer par carte</div>
         </div>
       )}
       <CardElement options={cardStyle} />
-      <button onClick={handleSubmit}>Pay Now</button>
+      <button onClick={handleSubmit}>Payer maintenant</button>
     </div>
   );
 }`,
-        riskLabel: "low",
+        riskLabel: "faible",
       },
       {
         path: "src/hooks/usePaymentRequest.ts",
         language: "typescript",
         additions: 38,
         deletions: 0,
-        before: "// New file",
+        before: "// Nouveau fichier",
         after: `import { useStripe } from '@stripe/react-stripe-js';
 import { useState, useEffect } from 'react';
 
@@ -60,7 +60,7 @@ export function usePaymentRequest(amount: number) {
     const pr = stripe.paymentRequest({
       country: 'FR',
       currency: 'eur',
-      total: { label: 'Order Total', amount },
+      total: { label: 'Total commande', amount },
       requestPayerName: true,
       requestPayerEmail: true,
     });
@@ -75,7 +75,7 @@ export function usePaymentRequest(amount: number) {
 
   return { paymentRequest, canMakePayment };
 }`,
-        riskLabel: "low",
+        riskLabel: "faible",
       },
       {
         path: "server/routes/payment.routes.ts",
@@ -102,10 +102,10 @@ export function usePaymentRequest(amount: number) {
   });
   res.json({ clientSecret: intent.client_secret });
 });`,
-        riskLabel: "medium",
+        riskLabel: "moyen",
       },
     ],
-    summary: "Add Apple Pay and Google Pay support via Stripe Payment Request API. Creates a new hook for payment request management and updates the payment step component.",
+    summary: "Ajout du support Apple Pay et Google Pay via l'API Stripe Payment Request. Crée un nouveau hook pour la gestion des requêtes de paiement et met à jour le composant du step de paiement.",
     totalAdditions: 95,
     totalDeletions: 11,
   },
@@ -131,14 +131,14 @@ export function usePaymentRequest(amount: number) {
     }
   });
 }, { rootMargin: '0px 0px -50px 0px' });`,
-        riskLabel: "low",
+        riskLabel: "faible",
       },
       {
         path: "src/hooks/useSafeIntersectionObserver.ts",
         language: "typescript",
         additions: 32,
         deletions: 0,
-        before: "// New file",
+        before: "// Nouveau fichier",
         after: `import { useEffect, useRef } from 'react';
 
 export function useSafeIntersectionObserver(
@@ -149,7 +149,7 @@ export function useSafeIntersectionObserver(
 
   useEffect(() => {
     if (typeof IntersectionObserver === 'undefined') {
-      console.warn('IntersectionObserver not supported');
+      console.warn('IntersectionObserver non supporté');
       return;
     }
 
@@ -159,7 +159,7 @@ export function useSafeIntersectionObserver(
         rootMargin: options?.rootMargin?.replace(/vh|vw/g, 'px') || '0px',
       });
     } catch (e) {
-      console.error('IntersectionObserver init failed:', e);
+      console.error('Échec initialisation IntersectionObserver :', e);
     }
 
     return () => observerRef.current?.disconnect();
@@ -167,10 +167,10 @@ export function useSafeIntersectionObserver(
 
   return observerRef;
 }`,
-        riskLabel: "low",
+        riskLabel: "faible",
       },
     ],
-    summary: "Fix Safari 17.x crash by replacing direct IntersectionObserver usage with a compatibility wrapper that handles viewport-relative units and null entries.",
+    summary: "Correction du crash Safari 17.x en remplaçant l'utilisation directe d'IntersectionObserver par un wrapper de compatibilité gérant les unités relatives au viewport et les entrées null.",
     totalAdditions: 50,
     totalDeletions: 12,
   },

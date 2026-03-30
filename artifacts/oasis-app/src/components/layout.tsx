@@ -20,16 +20,15 @@ export function AppLayout({ children }: { children: ReactNode }) {
   const { user, logout } = useAuth();
 
   const navItems = [
-    { href: "/", label: "Dashboard", icon: LayoutDashboard },
+    { href: "/", label: "Tableau de bord", icon: LayoutDashboard },
     { href: "/clients", label: "Clients", icon: Users },
-    { href: "/workspace", label: "Workspace", icon: FolderKanban, startsWith: true },
-    { href: "/history", label: "History", icon: History },
-    { href: "/admin", label: "Admin & Profile", icon: Settings },
+    { href: "/workspace", label: "Espace de travail", icon: FolderKanban, startsWith: true },
+    { href: "/history", label: "Historique", icon: History },
+    { href: "/admin", label: "Admin & Profil", icon: Settings },
   ];
 
   return (
     <div className="min-h-screen bg-background flex flex-col md:flex-row">
-      {/* Sidebar */}
       <aside className="hidden md:flex flex-col w-64 border-r border-border bg-sidebar shrink-0">
         <div className="h-16 flex items-center px-6 border-b border-border">
           <Logo />
@@ -66,20 +65,18 @@ export function AppLayout({ children }: { children: ReactNode }) {
               {user?.name?.charAt(0) || "U"}
             </div>
             <div className="flex-1 overflow-hidden">
-              <p className="text-sm font-medium truncate">{user?.name || "User"}</p>
-              <p className="text-xs text-muted-foreground truncate">{user?.role || "Developer"}</p>
+              <p className="text-sm font-medium truncate">{user?.name || "Utilisateur"}</p>
+              <p className="text-xs text-muted-foreground truncate">{user?.role || "Développeur"}</p>
             </div>
           </div>
           <Button variant="ghost" className="w-full justify-start text-muted-foreground hover:text-destructive mt-2" onClick={logout}>
             <LogOut className="mr-3 h-4 w-4" />
-            Sign out
+            Se déconnecter
           </Button>
         </div>
       </aside>
 
-      {/* Main Content */}
       <div className="flex-1 flex flex-col h-screen overflow-hidden">
-        {/* Mobile Header */}
         <header className="md:hidden h-16 border-b border-border bg-white flex items-center justify-between px-4 shrink-0">
           <Logo />
           <Button variant="ghost" size="icon">
@@ -87,14 +84,13 @@ export function AppLayout({ children }: { children: ReactNode }) {
           </Button>
         </header>
 
-        {/* Top Header (Desktop) */}
         <header className="hidden md:flex h-16 border-b border-border bg-white items-center justify-between px-8 shrink-0 glass-panel z-10 sticky top-0">
           <div className="flex items-center w-full max-w-md">
             <div className="relative w-full">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <input 
                 type="text" 
-                placeholder="Search across OASIS..." 
+                placeholder="Rechercher dans OASIS..." 
                 className="w-full pl-10 pr-4 py-2 bg-muted/50 border-transparent rounded-md text-sm focus:bg-white focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all outline-none"
               />
             </div>
@@ -107,7 +103,6 @@ export function AppLayout({ children }: { children: ReactNode }) {
           </div>
         </header>
 
-        {/* Page Content */}
         <main className="flex-1 overflow-y-auto bg-background p-4 md:p-8 animate-fade-in">
           {children}
         </main>

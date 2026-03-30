@@ -17,7 +17,7 @@ export function ProtectedRoute({ children }: { children: ReactNode }) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-background">
         <Loader2 className="h-8 w-8 animate-spin text-primary mb-4" />
-        <p className="text-muted-foreground animate-pulse">Loading OASIS Projet...</p>
+        <p className="text-muted-foreground animate-pulse">Chargement d'OASIS Projet...</p>
       </div>
     );
   }
