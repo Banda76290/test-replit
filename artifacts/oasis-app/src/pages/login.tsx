@@ -25,7 +25,6 @@ export default function LoginPage() {
     <div className="min-h-screen bg-muted/30 flex flex-col justify-center items-center p-4 relative overflow-hidden">
       <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] rounded-full bg-primary/5 blur-[100px]" />
       <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] rounded-full bg-primary/10 blur-[100px]" />
-      
       <div className="w-full max-w-md animate-slide-up z-10">
         <div className="flex flex-col items-center mb-8">
           <Logo className="scale-125 mb-4" />
@@ -35,7 +34,7 @@ export default function LoginPage() {
         <Card className="border-none shadow-xl shadow-black/5 bg-white/90 backdrop-blur-xl">
           <CardHeader className="text-center space-y-2 pb-6 border-b border-border/50">
             <CardTitle className="text-2xl">Portail Entreprise</CardTitle>
-            <CardDescription>Accès interne pour les ingénieurs et managers OASIS</CardDescription>
+            <CardDescription>Accès interne</CardDescription>
           </CardHeader>
           <CardContent className="pt-8 pb-8 flex flex-col items-center">
             
