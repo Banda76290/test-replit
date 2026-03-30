@@ -16,6 +16,7 @@ export interface User {
   role: string;
   team: string;
   avatar?: string;
+  isAdmin?: boolean;
 }
 
 export type DashboardSummarySuggestedActionsItem = {

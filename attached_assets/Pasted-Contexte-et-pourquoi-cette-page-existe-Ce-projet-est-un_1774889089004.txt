@@ -1,0 +1,42 @@
+Contexte et pourquoi cette page existe :
+
+Ce projet est une application web de détection d'arbitrage sportif. Elle est conçue pour être portable — c'est-à-dire exportable et déployable en dehors de Replit, dans un environnement auto-hébergé. Pour cela, le projet inclut :
+
+Un Dockerfile multi-stage pour construire une image Docker autonome (build + runtime, zéro node_modules en prod)
+Un docker-compose.yml qui orchestre l'app + une base PostgreSQL, avec variables d'environnement obligatoires (ODDS_API_KEY, DATABASE_URL)
+Des manifestes Kubernetes (k8s/) avec Deployment, Service, ConfigMap, Secrets, Ingress, et un dossier Kustomize
+Un Helm chart (helm/arbitrage-app/) pour un déploiement paramétrable sur Kubernetes
+Des pipelines CI/CD : .github/workflows/docker.yml (GitHub Actions) et .gitlab-ci.yml (GitLab CI) qui build l'image Docker et la poussent vers un registry
+Des formats standards : Procfile (buildpacks/Heroku), nixpacks.toml (Railway/Render)
+Un build-server.mjs personnalisé qui gère la compatibilité ESM/CJS pour le build de production
+Un endpoint de santé /healthz utilisé par tous les probes (Docker, Kubernetes, Helm)
+Le problème : tout ce code d'infrastructure est dans le projet Replit, mais pour que le responsable puisse l'utiliser, il faut sortir le code de Replit — soit en ZIP, soit en le poussant vers un dépôt Git (GitHub/GitLab). C'est précisément le rôle de la page /admin.
+
+La page /admin sert donc de pont entre l'environnement Replit et le monde extérieur (Docker/K8s/CI-CD).
+
+Instruction à donner à l'agent Replit AI dans un autre projet :
+
+Implémente une page d'administration accessible à /admin. Cette page permet d'exporter le code source du projet pour le déployer dans un environnement Docker, Kubernetes, ou via des pipelines CI/CD (GitHub Actions, GitLab CI). Le projet contient des fichiers d'infrastructure (Dockerfile, docker-compose.yml, manifestes K8s, Helm charts, pipelines CI/CD) qui doivent être transmis au responsable technique. La page offre deux moyens d'export :
+
+1. Dépendances à installer :
+
+archiver — création d'archives ZIP côté serveur
+simple-git — exécution de commandes Git côté serveur
+2. Page frontend (client/src/pages/admin.tsx) :
+
+Deux cartes (composants shadcn Card) :
+"Exporter le code source" : Bouton qui appelle GET /api/admin/export, reçoit un blob ZIP, déclenche le téléchargement via un lien <a> temporaire. Fichier nommé project-export.zip. Exclut node_modules, .git, dist, .local, .env.
+"Pousser vers Git" : Formulaire avec 3 champs — URL du dépôt distant, branche (défaut main), token d'accès (champ password, optionnel). Envoie POST /api/admin/git-push. Affiche loading/success/error.
+Utilise react-hook-form pour le formulaire.
+Icônes lucide-react : Download, GitBranch, ArrowLeft, CheckCircle, XCircle, Loader2.
+Bouton "Retour" vers /.
+3. Enregistrer la route dans App.tsx :
+
+import Admin from "@/pages/admin" et <Route path="/admin" component={Admin} />.
+4. Routes backend (server/routes.ts) :
+
+GET /api/admin/export : Utilise archiver pour créer un ZIP du projet complet. Écrit dans un fichier temporaire (os.tmpdir()), puis streame en réponse avec les headers Content-Type: application/zip, Content-Disposition: attachment, Content-Length. Nettoie le fichier temporaire après envoi. Exclut node_modules/**, .git/**, dist/**, .local/**, .env, .env.local, .env.*.local.
+
+POST /api/admin/git-push : Reçoit { remoteUrl, branch, token }. Utilise simple-git avec credential.helper= vidé pour désactiver tout credential manager système. Définit GIT_TERMINAL_PROMPT=0 pour empêcher Git de bloquer en mode interactif. Si un token est fourni, injecte l'authentification dans l'URL en remplaçant https:// par https://x-access-token:<token>@ (compatible GitHub et GitLab). Crée un remote temporaire, fait git push --force --set-upstream, supprime le remote. Le --force est nécessaire car le dépôt distant peut avoir un historique différent. Retourne succès ou erreur 500 avec message explicite.
+
+Pourquoi --force et x-access-token : Le push force est utilisé car le code Replit a son propre historique Git qui peut différer du repo distant. Le format x-access-token est le standard GitHub pour les Personal Access Tokens (le token doit avoir les scopes repo + workflow pour pousser les fichiers de pipeline CI/CD).

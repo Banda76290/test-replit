@@ -3,10 +3,15 @@ import { AppLayout } from "@/components/layout";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useGetAdminProfile, useUpdatePreferences } from "@workspace/api-client-react";
-import { User, Shield, Bell, Settings as SettingsIcon, Monitor, Save, Loader2 } from "lucide-react";
+import { useAuth } from "@/hooks/use-auth";
+import { 
+  User, Shield, Bell, Settings as SettingsIcon, Monitor, Save, Loader2,
+  Download, GitBranch, CheckCircle, XCircle, Package, Lock
+} from "lucide-react";
 
 export default function AdminPage() {
   const { data: profile, isLoading } = useGetAdminProfile();
+  const { user } = useAuth();
   const updatePrefs = useUpdatePreferences();
   
   const [isSaving, setIsSaving] = useState(false);
@@ -26,6 +31,8 @@ export default function AdminPage() {
       </AppLayout>
     );
   }
+
+  const isAdmin = user?.isAdmin === true;
 
   return (
     <AppLayout>
@@ -57,6 +64,12 @@ export default function AdminPage() {
                     <span className="text-muted-foreground flex items-center"><Shield className="w-4 h-4 mr-2" /> Équipe</span>
                     <span className="font-medium text-foreground">{profile.user.team}</span>
                   </div>
+                  {isAdmin && (
+                    <div className="flex justify-between items-center px-3 py-2 bg-primary/5 rounded-md text-sm border border-primary/20">
+                      <span className="text-primary flex items-center"><Lock className="w-4 h-4 mr-2" /> Accès</span>
+                      <span className="font-semibold text-primary">Administrateur</span>
+                    </div>
+                  )}
                 </div>
               </CardContent>
             </Card>
@@ -133,9 +146,203 @@ export default function AdminPage() {
                 </div>
               </CardContent>
             </Card>
+
+            {isAdmin && (
+              <>
+                <ExportCard />
+                <GitPushCard />
+              </>
+            )}
           </div>
         </div>
       </div>
     </AppLayout>
+  );
+}
+
+function ExportCard() {
+  const [isExporting, setIsExporting] = useState(false);
+  const [exportStatus, setExportStatus] = useState<{ type: "success" | "error"; message: string } | null>(null);
+
+  const handleExport = async () => {
+    setIsExporting(true);
+    setExportStatus(null);
+    try {
+      const baseUrl = import.meta.env.BASE_URL || '/';
+      const response = await fetch(`${baseUrl}api/admin/export`, {
+        credentials: "include",
+      });
+      if (!response.ok) {
+        const err = await response.json().catch(() => ({ error: "Erreur inconnue" }));
+        throw new Error(err.error || `Erreur ${response.status}`);
+      }
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "oasis-projet-export.zip";
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+      setExportStatus({ type: "success", message: "Archive ZIP téléchargée avec succès" });
+    } catch (error: any) {
+      setExportStatus({ type: "error", message: error.message || "Échec de l'export" });
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
+  return (
+    <Card className="border-border/60 shadow-sm bg-white">
+      <CardHeader className="border-b border-border/50 bg-muted/10">
+        <CardTitle className="text-lg flex items-center">
+          <Package className="w-5 h-5 mr-2 text-primary" />
+          Exporter le code source
+        </CardTitle>
+        <CardDescription>
+          Téléchargez une archive ZIP du projet complet pour le déployer dans un environnement Docker, Kubernetes ou via des pipelines CI/CD.
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="p-6 space-y-4">
+        <div className="bg-muted/20 rounded-lg p-4 border border-border/40">
+          <p className="text-sm text-muted-foreground mb-2 font-medium">Fichiers exclus de l'archive :</p>
+          <div className="flex flex-wrap gap-2">
+            {["node_modules", ".git", "dist", ".local", ".env", ".cache"].map(item => (
+              <span key={item} className="px-2 py-1 bg-slate-100 text-slate-600 rounded text-xs font-mono border border-slate-200">
+                {item}
+              </span>
+            ))}
+          </div>
+        </div>
+
+        {exportStatus && (
+          <div className={`flex items-center gap-2 p-3 rounded-md text-sm border ${
+            exportStatus.type === "success" 
+              ? "bg-emerald-50 text-emerald-700 border-emerald-200" 
+              : "bg-destructive/10 text-destructive border-destructive/20"
+          }`}>
+            {exportStatus.type === "success" ? <CheckCircle className="w-4 h-4 shrink-0" /> : <XCircle className="w-4 h-4 shrink-0" />}
+            {exportStatus.message}
+          </div>
+        )}
+
+        <Button onClick={handleExport} disabled={isExporting} className="shadow-sm">
+          {isExporting ? (
+            <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Génération de l'archive...</>
+          ) : (
+            <><Download className="w-4 h-4 mr-2" /> Télécharger le ZIP</>
+          )}
+        </Button>
+      </CardContent>
+    </Card>
+  );
+}
+
+function GitPushCard() {
+  const [remoteUrl, setRemoteUrl] = useState("");
+  const [branch, setBranch] = useState("main");
+  const [token, setToken] = useState("");
+  const [isPushing, setIsPushing] = useState(false);
+  const [pushStatus, setPushStatus] = useState<{ type: "success" | "error"; message: string } | null>(null);
+
+  const handlePush = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!remoteUrl.trim()) return;
+
+    setIsPushing(true);
+    setPushStatus(null);
+    try {
+      const baseUrl = import.meta.env.BASE_URL || '/';
+      const response = await fetch(`${baseUrl}api/admin/git-push`, {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ remoteUrl, branch, token: token || undefined }),
+      });
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data.error || `Erreur ${response.status}`);
+      }
+      setPushStatus({ type: "success", message: data.message });
+    } catch (error: any) {
+      setPushStatus({ type: "error", message: error.message || "Échec du push" });
+    } finally {
+      setIsPushing(false);
+    }
+  };
+
+  return (
+    <Card className="border-border/60 shadow-sm bg-white">
+      <CardHeader className="border-b border-border/50 bg-muted/10">
+        <CardTitle className="text-lg flex items-center">
+          <GitBranch className="w-5 h-5 mr-2 text-primary" />
+          Pousser vers Git
+        </CardTitle>
+        <CardDescription>
+          Envoyez le code source vers un dépôt GitHub ou GitLab distant. Le push utilise <code className="text-xs bg-muted px-1 rounded">--force</code> pour synchroniser l'historique.
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="p-6">
+        <form onSubmit={handlePush} className="space-y-4">
+          <div className="space-y-2">
+            <label className="text-sm font-medium text-foreground block">URL du dépôt distant *</label>
+            <input
+              type="url"
+              value={remoteUrl}
+              onChange={(e) => setRemoteUrl(e.target.value)}
+              placeholder="https://github.com/organisation/oasis-projet.git"
+              required
+              className="w-full bg-white border border-border rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
+            />
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-foreground block">Branche</label>
+              <input
+                type="text"
+                value={branch}
+                onChange={(e) => setBranch(e.target.value)}
+                placeholder="main"
+                className="w-full bg-white border border-border rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
+              />
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-foreground block">Token d'accès</label>
+              <input
+                type="password"
+                value={token}
+                onChange={(e) => setToken(e.target.value)}
+                placeholder="ghp_xxxx... (optionnel)"
+                className="w-full bg-white border border-border rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
+              />
+              <p className="text-[11px] text-muted-foreground">
+                Personal Access Token avec les scopes <code className="bg-muted px-1 rounded text-[10px]">repo</code> + <code className="bg-muted px-1 rounded text-[10px]">workflow</code>
+              </p>
+            </div>
+          </div>
+
+          {pushStatus && (
+            <div className={`flex items-center gap-2 p-3 rounded-md text-sm border ${
+              pushStatus.type === "success" 
+                ? "bg-emerald-50 text-emerald-700 border-emerald-200" 
+                : "bg-destructive/10 text-destructive border-destructive/20"
+            }`}>
+              {pushStatus.type === "success" ? <CheckCircle className="w-4 h-4 shrink-0" /> : <XCircle className="w-4 h-4 shrink-0" />}
+              {pushStatus.message}
+            </div>
+          )}
+
+          <Button type="submit" disabled={isPushing || !remoteUrl.trim()} className="shadow-sm">
+            {isPushing ? (
+              <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Push en cours...</>
+            ) : (
+              <><GitBranch className="w-4 h-4 mr-2" /> Pousser le code</>
+            )}
+          </Button>
+        </form>
+      </CardContent>
+    </Card>
   );
 }

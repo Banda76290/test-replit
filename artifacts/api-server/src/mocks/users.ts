@@ -5,4 +5,5 @@ export const mockUser = {
   role: "Développeur Principal",
   team: "Platform Engineering",
   avatar: "",
+  isAdmin: true,
 };

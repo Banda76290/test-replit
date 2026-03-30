@@ -66,7 +66,7 @@ artifacts-monorepo/
 4. **Client Projects** (`/clients/:id/projects`) — Project list for selected client
 5. **Workspace** (`/workspace/:projectId`) — AI analysis cockpit (strongest page)
 6. **History** (`/history`) — Analysis history table with filters
-7. **Admin** (`/admin`) — Profile, preferences, recent logins
+7. **Admin** (`/admin`) — Profile, preferences, recent logins, ZIP export, Git push (admin-only)
 
 ## API Endpoints
 
@@ -88,11 +88,13 @@ All mock data served from `artifacts/api-server/src/mocks/`:
 - `GET /api/preferences` — User preferences
 - `PUT /api/preferences` — Update preferences
 - `GET /api/admin/profile` — Admin profile
+- `GET /api/admin/export` — Download ZIP archive of project (admin-only)
+- `POST /api/admin/git-push` — Push code to remote Git repo (admin-only, accepts remoteUrl/branch/token)
 - `POST /api/analysis/:id/feedback` — Submit feedback
 
 ## Authentication
 
-Simple cookie-based session. Login creates a session cookie; `/api/me` validates it. The frontend `AuthProvider` manages auth state and redirects unauthenticated users to `/login`.
+Simple cookie-based session. Login creates a session cookie; `/api/me` validates it. The frontend `AuthProvider` manages auth state and redirects unauthenticated users to `/login`. Mock user has `isAdmin: true`; admin-only features (ZIP export, Git push) are protected by `requireAdmin` middleware and conditionally rendered on the frontend.
 
 ## Key Commands
 

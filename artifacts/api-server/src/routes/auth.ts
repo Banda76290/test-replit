@@ -1,9 +1,8 @@
 import { Router, type IRouter } from "express";
 import { mockUser } from "../mocks/users";
+import { sessions } from "../lib/session";
 
 const router: IRouter = Router();
-
-const sessions = new Set<string>();
 
 router.get("/me", (req, res) => {
   const sessionId = req.cookies?.session;

@@ -24,6 +24,7 @@ export const GetMeResponse = zod.object({
   role: zod.string(),
   team: zod.string(),
   avatar: zod.string().optional(),
+  isAdmin: zod.boolean().optional(),
 });
 
 /**
@@ -40,6 +41,7 @@ export const LoginResponse = zod.object({
   role: zod.string(),
   team: zod.string(),
   avatar: zod.string().optional(),
+  isAdmin: zod.boolean().optional(),
 });
 
 /**
@@ -440,6 +442,7 @@ export const GetAdminProfileResponse = zod.object({
     role: zod.string(),
     team: zod.string(),
     avatar: zod.string().optional(),
+    isAdmin: zod.boolean().optional(),
   }),
   recentLogins: zod.array(
     zod.object({

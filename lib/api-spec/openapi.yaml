@@ -379,6 +379,8 @@ components:
           type: string
         avatar:
           type: string
+        isAdmin:
+          type: boolean
       required: [id, name, email, role, team]
 
     DashboardSummary:
