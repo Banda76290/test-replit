@@ -63,6 +63,7 @@ export const GetDashboardSummaryResponse = zod.object({
   recentClients: zod.array(
     zod.object({
       id: zod.string(),
+      ref: zod.string(),
       name: zod.string(),
       sector: zod.string(),
       contractStatus: zod.string(),
@@ -74,20 +75,7 @@ export const GetDashboardSummaryResponse = zod.object({
       logo: zod.string().optional(),
     }),
   ),
-  recentProjects: zod.array(
-    zod.object({
-      id: zod.string(),
-      clientId: zod.string(),
-      name: zod.string(),
-      status: zod.string(),
-      techStack: zod.array(zod.string()),
-      health: zod.string(),
-      recentIncidents: zod.number(),
-      nextMilestone: zod.string(),
-      description: zod.string(),
-      lastUpdated: zod.string(),
-    }),
-  ),
+  recentProjects: zod.array(zod.unknown()),
   recentAnalyses: zod.array(
     zod.object({
       id: zod.string(),
@@ -156,6 +144,7 @@ export const GetClientsQueryParams = zod.object({
 
 export const GetClientsResponseItem = zod.object({
   id: zod.string(),
+  ref: zod.string(),
   name: zod.string(),
   sector: zod.string(),
   contractStatus: zod.string(),
@@ -178,13 +167,11 @@ export const GetClientProjectsParams = zod.object({
 export const GetClientProjectsResponseItem = zod.object({
   id: zod.string(),
   clientId: zod.string(),
+  ref: zod.string(),
   name: zod.string(),
+  description: zod.string().optional(),
   status: zod.string(),
-  techStack: zod.array(zod.string()),
-  health: zod.string(),
-  recentIncidents: zod.number(),
-  nextMilestone: zod.string(),
-  description: zod.string(),
+  prestationCount: zod.number(),
   lastUpdated: zod.string(),
 });
 export const GetClientProjectsResponse = zod.array(
@@ -201,22 +188,71 @@ export const GetProjectParams = zod.object({
 export const GetProjectResponse = zod.object({
   id: zod.string(),
   clientId: zod.string(),
+  ref: zod.string(),
   name: zod.string(),
+  description: zod.string().optional(),
+  status: zod.string(),
+  prestationCount: zod.number(),
+  lastUpdated: zod.string(),
+});
+
+/**
+ * @summary Get prestations for a project
+ */
+export const GetProjectPrestationsParams = zod.object({
+  id: zod.coerce.string(),
+});
+
+export const GetProjectPrestationsResponseItem = zod.object({
+  id: zod.string(),
+  projectId: zod.string(),
+  clientId: zod.string(),
+  ref: zod.string(),
+  name: zod.string(),
+  description: zod.string(),
   status: zod.string(),
   techStack: zod.array(zod.string()),
   health: zod.string(),
   recentIncidents: zod.number(),
   nextMilestone: zod.string(),
-  description: zod.string(),
   lastUpdated: zod.string(),
+  productionUrl: zod.string(),
+  saveUrls: zod.array(zod.string()).optional(),
+});
+export const GetProjectPrestationsResponse = zod.array(
+  GetProjectPrestationsResponseItem,
+);
+
+/**
+ * @summary Get prestation details
+ */
+export const GetPrestationParams = zod.object({
+  id: zod.coerce.string(),
+});
+
+export const GetPrestationResponse = zod.object({
+  id: zod.string(),
+  projectId: zod.string(),
+  clientId: zod.string(),
+  ref: zod.string(),
+  name: zod.string(),
+  description: zod.string(),
+  status: zod.string(),
+  techStack: zod.array(zod.string()),
+  health: zod.string(),
+  recentIncidents: zod.number(),
+  nextMilestone: zod.string(),
+  lastUpdated: zod.string(),
+  productionUrl: zod.string(),
+  saveUrls: zod.array(zod.string()).optional(),
 });
 
 /**
  * @summary Run AI analysis
  */
 export const RunAnalysisBody = zod.object({
+  prestationId: zod.string(),
   projectId: zod.string(),
-  clientId: zod.string(),
   taskType: zod.string(),
   prompt: zod.string(),
   documentName: zod.string().optional(),

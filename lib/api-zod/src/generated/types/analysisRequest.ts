@@ -7,8 +7,8 @@
  */
 
 export interface AnalysisRequest {
+  prestationId: string;
   projectId: string;
-  clientId: string;
   taskType: string;
   prompt: string;
   documentName?: string;

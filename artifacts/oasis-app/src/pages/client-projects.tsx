@@ -3,114 +3,100 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useGetClientProjects, useGetClients } from "@workspace/api-client-react";
 import { useRoute, Link } from "wouter";
-import { ArrowLeft, Activity, Server, AlertCircle, Calendar, FolderKanban } from "lucide-react";
+import { ArrowLeft, Calendar, FolderOpen, Layers, ChevronRight } from "lucide-react";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 
-const STATUS_LABELS: Record<string, string> = {
-  "in-progress": "En cours",
-  "planned": "Planifié",
-  "completed": "Terminé",
-  "critical": "Critique",
-};
-
-const HEALTH_LABELS: Record<string, { label: string; color: string }> = {
-  good: { label: "Bon", color: "text-emerald-600" },
-  neutral: { label: "Neutre", color: "text-amber-600" },
-  warning: { label: "Attention", color: "text-orange-600" },
-  critical: { label: "Critique", color: "text-red-600" },
+const STATUS_LABELS: Record<string, { label: string; color: string; bg: string }> = {
+  "active": { label: "Actif", color: "text-emerald-700", bg: "bg-emerald-50 border-emerald-200" },
+  "planned": { label: "Planifié", color: "text-blue-700", bg: "bg-blue-50 border-blue-200" },
+  "critical": { label: "Critique", color: "text-red-700", bg: "bg-red-50 border-red-200" },
+  "inactive": { label: "Inactif", color: "text-foreground/60", bg: "bg-muted border-border" },
 };
 
 export default function ClientProjectsPage() {
   const [, params] = useRoute("/clients/:id/projects");
   const clientId = params?.id || "";
-  
+
   const { data: clients } = useGetClients();
   const client = clients?.find(c => c.id === clientId);
-  const { data: projects, isLoading } = useGetClientProjects(clientId);
+  const { data: projets, isLoading } = useGetClientProjects(clientId);
 
   return (
     <AppLayout>
       <div className="max-w-7xl mx-auto space-y-6">
-        <div className="flex items-center gap-4 text-sm text-muted-foreground mb-4">
+        <div className="flex items-center gap-2 text-sm text-muted-foreground mb-4">
           <Link href="/clients" className="hover:text-primary flex items-center transition-colors">
             <ArrowLeft className="w-4 h-4 mr-1" />
-            Retour au portefeuille
+            Portefeuille clients
           </Link>
           <span>/</span>
-          <span className="font-medium text-foreground">{client?.name || 'Chargement...'}</span>
+          {client && (
+            <>
+              <span className="text-muted-foreground">{client.name}</span>
+              <span className="ml-1 px-1.5 py-0.5 rounded text-[10px] font-mono bg-muted border border-border text-muted-foreground">{client.ref}</span>
+            </>
+          )}
         </div>
 
         <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4 pb-6 border-b border-border/50">
           <div>
-            <h1 className="text-3xl font-bold tracking-tight text-foreground flex items-center gap-3">
+            <h1 className="text-3xl font-bold tracking-tight text-foreground">
               Projets de {client?.name}
             </h1>
             <p className="text-muted-foreground mt-2 max-w-2xl">
-              Sélectionnez un projet pour accéder à l'espace de travail OASIS et lancer une analyse technique, un plan d'architecture ou une génération de code.
+              Sélectionnez un projet pour accéder à ses prestations et lancer une analyse technique dans OASIS.
             </p>
           </div>
         </div>
 
         {isLoading ? (
           <div className="space-y-4 animate-pulse">
-            {[1, 2, 3].map(i => <div key={i} className="h-32 bg-muted rounded-xl"></div>)}
+            {[1, 2].map(i => <div key={i} className="h-36 bg-muted rounded-xl"></div>)}
           </div>
         ) : (
           <div className="grid grid-cols-1 gap-4">
-            {projects?.map((project) => {
-              const healthInfo = HEALTH_LABELS[project.health] || { label: project.health, color: "text-foreground/80" };
+            {projets?.map((projet) => {
+              const statusInfo = STATUS_LABELS[projet.status] || { label: projet.status, color: "text-foreground/80", bg: "bg-muted border-border" };
               return (
-                <Card key={project.id} className="border-border/60 hover:border-primary/30 hover:shadow-md transition-all group bg-card">
+                <Card key={projet.id} className="border-border/60 hover:border-primary/30 hover:shadow-md transition-all group bg-card">
                   <CardContent className="p-0">
                     <div className="flex flex-col lg:flex-row">
                       <div className="p-6 flex-1 border-b lg:border-b-0 lg:border-r border-border/50">
-                        <div className="flex justify-between items-start mb-2">
-                          <h3 className="text-xl font-bold text-foreground group-hover:text-primary transition-colors">{project.name}</h3>
-                          <span className={`px-2.5 py-1 rounded-full text-xs font-semibold ${
-                            project.status === 'in-progress' ? 'bg-blue-100 text-blue-700' : 
-                            project.status === 'critical' ? 'bg-red-100 text-red-700' :
-                            project.status === 'completed' ? 'bg-emerald-100 text-emerald-700' : 
-                            'bg-muted text-foreground/90'
-                          }`}>
-                            {STATUS_LABELS[project.status] || project.status}
-                          </span>
-                        </div>
-                        <p className="text-sm text-muted-foreground mb-4 max-w-3xl">
-                          {project.description}
-                        </p>
-                        
-                        <div className="flex flex-wrap items-center gap-4 text-xs">
-                          <div className="flex items-center gap-1.5 text-foreground/80 bg-muted/50 px-2 py-1 rounded-md border border-border">
-                            <Server className="w-3.5 h-3.5" />
-                            <div className="flex gap-1">
-                              {project.techStack.slice(0, 4).map(tech => (
-                                <span key={tech} className="font-medium">{tech}{project.techStack.indexOf(tech) !== Math.min(3, project.techStack.length-1) ? ',' : ''}</span>
-                              ))}
-                              {project.techStack.length > 4 && <span>+{project.techStack.length - 4}</span>}
+                        <div className="flex justify-between items-start mb-3">
+                          <div>
+                            <div className="flex items-center gap-2 mb-1">
+                              <span className="text-xs font-mono text-muted-foreground bg-muted px-2 py-0.5 rounded border border-border">{projet.ref}</span>
+                              <span className={`px-2.5 py-0.5 rounded-full text-xs font-semibold border ${statusInfo.bg} ${statusInfo.color}`}>
+                                {statusInfo.label}
+                              </span>
                             </div>
+                            <h3 className="text-xl font-bold text-foreground group-hover:text-primary transition-colors">{projet.name}</h3>
                           </div>
-                          <div className="flex items-center gap-1.5 text-foreground/80">
+                        </div>
+                        {projet.description && (
+                          <p className="text-sm text-muted-foreground mb-4 max-w-3xl">{projet.description}</p>
+                        )}
+                        <div className="flex flex-wrap items-center gap-4 text-xs text-muted-foreground">
+                          <div className="flex items-center gap-1.5">
                             <Calendar className="w-3.5 h-3.5" />
-                            <span>Mis à jour le {format(new Date(project.lastUpdated), 'd MMM yyyy', { locale: fr })}</span>
+                            <span>Mis à jour le {format(new Date(projet.lastUpdated), 'd MMM yyyy', { locale: fr })}</span>
                           </div>
                         </div>
                       </div>
-                      
+
                       <div className="p-6 lg:w-72 bg-muted/10 flex flex-col justify-between">
-                        <div className="space-y-3 mb-6">
-                          <div className="flex justify-between items-center text-sm">
-                            <span className="text-muted-foreground flex items-center"><Activity className="w-4 h-4 mr-2" /> Santé</span>
-                            <span className={`font-medium ${healthInfo.color}`}>{healthInfo.label}</span>
+                        <div className="mb-6">
+                          <div className="flex items-center gap-2 text-sm text-muted-foreground mb-1">
+                            <Layers className="w-4 h-4" />
+                            <span>Prestations actives</span>
                           </div>
-                          <div className="flex justify-between items-center text-sm">
-                            <span className="text-muted-foreground flex items-center"><AlertCircle className="w-4 h-4 mr-2" /> Incidents</span>
-                            <span className="font-medium">{project.recentIncidents} récent{project.recentIncidents > 1 ? 's' : ''}</span>
-                          </div>
+                          <p className="text-3xl font-bold text-foreground">{projet.prestationCount}</p>
                         </div>
-                        <Link href={`/workspace/${project.id}`}>
+                        <Link href={`/projects/${projet.id}/prestations`}>
                           <Button className="w-full group-hover:bg-primary group-hover:text-primary-foreground shadow-sm">
-                            Ouvrir l'espace de travail
+                            Voir les prestations
+                            <ChevronRight className="w-4 h-4 ml-1" />
                           </Button>
                         </Link>
                       </div>
@@ -119,10 +105,10 @@ export default function ClientProjectsPage() {
                 </Card>
               );
             })}
-            
-            {projects?.length === 0 && (
+
+            {projets?.length === 0 && (
               <div className="text-center py-20 border-2 border-dashed border-border rounded-xl">
-                <FolderKanban className="w-12 h-12 text-muted-foreground mx-auto mb-4 opacity-50" />
+                <FolderOpen className="w-12 h-12 text-muted-foreground mx-auto mb-4 opacity-50" />
                 <h3 className="text-lg font-medium text-foreground">Aucun projet trouvé</h3>
                 <p className="text-muted-foreground mt-1">Ce client n'a pas encore de projet actif.</p>
               </div>

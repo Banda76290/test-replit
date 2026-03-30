@@ -6,15 +6,13 @@
  * OpenAPI spec version: 0.1.0
  */
 
-export interface Project {
+export interface Projet {
   id: string;
   clientId: string;
+  ref: string;
   name: string;
+  description?: string;
   status: string;
-  techStack: string[];
-  health: string;
-  recentIncidents: number;
-  nextMilestone: string;
-  description: string;
+  prestationCount: number;
   lastUpdated: string;
 }

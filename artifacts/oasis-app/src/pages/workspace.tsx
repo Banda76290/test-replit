@@ -2,11 +2,12 @@ import { useState, useEffect } from "react";
 import { AppLayout } from "@/components/layout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { useGetProject, useRunAnalysis, useSubmitFeedback, type AnalysisResult } from "@workspace/api-client-react";
-import { useRoute, useLocation } from "wouter";
-import { 
-  Cpu, FileText, Send, Sparkles, AlertTriangle, CheckCircle2, 
-  GitMerge, Server, ThumbsUp, ThumbsDown, Loader2, ArrowRight
+import { useGetPrestation, useRunAnalysis, useSubmitFeedback, type AnalysisResult } from "@workspace/api-client-react";
+import { useRoute, useLocation, Link } from "wouter";
+import {
+  Cpu, FileText, Send, Sparkles, AlertTriangle, CheckCircle2,
+  GitMerge, Server, ThumbsUp, ThumbsDown, Loader2, ArrowLeft,
+  Globe, Link2, ExternalLink
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -22,19 +23,19 @@ const TASK_TYPES = [
 ];
 
 export default function WorkspacePage() {
-  const [, params] = useRoute("/workspace/:projectId");
-  const projectId = params?.projectId || "";
+  const [, params] = useRoute("/workspace/:prestationId");
+  const prestationId = params?.prestationId || "";
   const [, navigate] = useLocation();
 
   useEffect(() => {
-    if (!projectId) {
+    if (!prestationId) {
       navigate("/clients");
     }
-  }, [projectId, navigate]);
+  }, [prestationId, navigate]);
 
-  const { data: project } = useGetProject(projectId);
+  const { data: prestation } = useGetPrestation(prestationId);
   const runAnalysis = useRunAnalysis();
-  
+
   const [taskType, setTaskType] = useState(TASK_TYPES[0].id);
   const [prompt, setPrompt] = useState("");
   const [result, setResult] = useState<AnalysisResult | null>(null);
@@ -45,8 +46,8 @@ export default function WorkspacePage() {
     try {
       const res = await runAnalysis.mutateAsync({
         data: {
-          projectId,
-          clientId: project?.clientId || "",
+          prestationId,
+          projectId: prestation?.projectId || "",
           taskType,
           prompt
         }
@@ -62,19 +63,100 @@ export default function WorkspacePage() {
     <AppLayout>
       <div className="h-full flex flex-col max-w-[1600px] mx-auto">
         <div className="flex items-center justify-between mb-6 shrink-0">
-          <div>
+          <div className="flex-1">
+            <div className="flex items-center gap-2 text-sm text-muted-foreground mb-2">
+              {prestation?.projectId && (
+                <Link href={`/projects/${prestation.projectId}/prestations`} className="hover:text-primary flex items-center transition-colors">
+                  <ArrowLeft className="w-4 h-4 mr-1" />
+                  Retour aux prestations
+                </Link>
+              )}
+              {!prestation?.projectId && (
+                <Link href="/clients" className="hover:text-primary flex items-center transition-colors">
+                  <ArrowLeft className="w-4 h-4 mr-1" />
+                  Retour
+                </Link>
+              )}
+              {prestation && (
+                <>
+                  <span>/</span>
+                  <span className="font-medium text-foreground">{prestation.name}</span>
+                  <span className="px-1.5 py-0.5 rounded text-[10px] font-mono bg-muted border border-border text-muted-foreground">{prestation.ref}</span>
+                </>
+              )}
+            </div>
             <h1 className="text-2xl font-bold tracking-tight text-foreground flex items-center">
               Espace de travail OASIS
             </h1>
             <p className="text-sm text-muted-foreground mt-1 flex items-center gap-2">
-              Contexte : <span className="font-semibold text-primary">{project?.name || "Chargement..."}</span>
+              Prestation : <span className="font-semibold text-primary">{prestation?.name || "Chargement..."}</span>
               <span className="px-2 py-0.5 rounded bg-muted text-[10px] uppercase font-bold tracking-wider">Env. sécurisé</span>
             </p>
           </div>
+
+          {prestation && (
+            <div className="hidden lg:flex flex-col items-end gap-1">
+              <a
+                href={prestation.productionUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-1.5 text-sm text-primary hover:underline font-medium"
+              >
+                <Globe className="w-4 h-4" />
+                {prestation.productionUrl}
+                <ExternalLink className="w-3 h-3 opacity-60" />
+              </a>
+              {prestation.saveUrls && prestation.saveUrls.length > 0 && (
+                <div className="flex items-center gap-2">
+                  {prestation.saveUrls.map((url) => (
+                    <a
+                      key={url}
+                      href={url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center gap-1 text-xs text-muted-foreground hover:text-primary border border-border rounded px-2 py-0.5 hover:border-primary/40 transition-colors"
+                    >
+                      <Link2 className="w-3 h-3" />
+                      {url}
+                    </a>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
         </div>
 
         <div className="flex-1 grid grid-cols-1 lg:grid-cols-12 gap-6 min-h-0">
           <div className="lg:col-span-4 flex flex-col gap-6 overflow-y-auto pr-2 pb-6">
+            {prestation && (
+              <Card className="border-border/60 shadow-sm shrink-0 lg:hidden">
+                <CardContent className="p-4 space-y-2">
+                  <a
+                    href={prestation.productionUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-2 text-sm text-primary hover:underline font-medium"
+                  >
+                    <Globe className="w-4 h-4 shrink-0" />
+                    <span className="truncate">{prestation.productionUrl}</span>
+                    <ExternalLink className="w-3 h-3 opacity-60 shrink-0" />
+                  </a>
+                  {prestation.saveUrls && prestation.saveUrls.map((url) => (
+                    <a
+                      key={url}
+                      href={url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center gap-2 text-xs text-muted-foreground hover:text-primary"
+                    >
+                      <Link2 className="w-3 h-3 shrink-0" />
+                      <span className="truncate">{url}</span>
+                    </a>
+                  ))}
+                </CardContent>
+              </Card>
+            )}
+
             <Card className="border-border/60 shadow-sm shrink-0">
               <CardHeader className="bg-muted/30 pb-4 border-b border-border/50">
                 <CardTitle className="text-base flex items-center">
@@ -92,8 +174,8 @@ export default function WorkspacePage() {
                         onClick={() => setTaskType(type.id)}
                         className={cn(
                           "text-left px-3 py-2 rounded-md text-sm transition-all border",
-                          taskType === type.id 
-                            ? "bg-primary/5 border-primary text-primary font-medium" 
+                          taskType === type.id
+                            ? "bg-primary/5 border-primary text-primary font-medium"
                             : "bg-card border-border text-muted-foreground hover:border-border/80"
                         )}
                       >
@@ -118,8 +200,8 @@ export default function WorkspacePage() {
                   <p className="text-xs text-muted-foreground">Glissez-déposez vos documents ici ou cliquez pour parcourir</p>
                 </div>
 
-                <Button 
-                  onClick={handleRunAnalysis} 
+                <Button
+                  onClick={handleRunAnalysis}
                   disabled={runAnalysis.isPending || !prompt.trim()}
                   className="w-full h-11 text-base shadow-md"
                 >
@@ -196,7 +278,7 @@ export default function WorkspacePage() {
 
 function TabButton({ active, onClick, children }: { active: boolean, onClick: () => void, children: React.ReactNode }) {
   return (
-    <button 
+    <button
       onClick={onClick}
       className={cn(
         "pb-3 text-sm font-medium transition-colors relative",
@@ -344,9 +426,9 @@ function FeedbackPanel({ analysisId }: { analysisId: string }) {
   return (
     <div className="bg-card border-t border-border/60 p-4 shrink-0 flex flex-col md:flex-row gap-4 items-center justify-between">
       <div className="flex-1 w-full relative">
-        <input 
-          type="text" 
-          placeholder="Ajouter un commentaire ou une demande d'ajustement..." 
+        <input
+          type="text"
+          placeholder="Ajouter un commentaire ou une demande d'ajustement..."
           value={comment}
           onChange={(e) => setComment(e.target.value)}
           className="w-full bg-muted/30 border border-border rounded-md px-4 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary"

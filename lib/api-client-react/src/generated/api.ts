@@ -30,7 +30,8 @@ import type {
   HealthStatus,
   LoginBody,
   Preferences,
-  Project,
+  Prestation,
+  Projet,
   Source,
   SubmitFeedback200,
   User,
@@ -448,8 +449,8 @@ export const getGetClientProjectsUrl = (id: string) => {
 export const getClientProjects = async (
   id: string,
   options?: RequestInit,
-): Promise<Project[]> => {
-  return customFetch<Project[]>(getGetClientProjectsUrl(id), {
+): Promise<Projet[]> => {
+  return customFetch<Projet[]>(getGetClientProjectsUrl(id), {
     ...options,
     method: "GET",
   });
@@ -535,8 +536,8 @@ export const getGetProjectUrl = (id: string) => {
 export const getProject = async (
   id: string,
   options?: RequestInit,
-): Promise<Project> => {
-  return customFetch<Project>(getGetProjectUrl(id), {
+): Promise<Projet> => {
+  return customFetch<Projet>(getGetProjectUrl(id), {
     ...options,
     method: "GET",
   });
@@ -604,6 +605,181 @@ export function useGetProject<
   },
 ): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
   const queryOptions = getGetProjectQueryOptions(id, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Get prestations for a project
+ */
+export const getGetProjectPrestationsUrl = (id: string) => {
+  return `/api/projects/${id}/prestations`;
+};
+
+export const getProjectPrestations = async (
+  id: string,
+  options?: RequestInit,
+): Promise<Prestation[]> => {
+  return customFetch<Prestation[]>(getGetProjectPrestationsUrl(id), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getGetProjectPrestationsQueryKey = (id: string) => {
+  return [`/api/projects/${id}/prestations`] as const;
+};
+
+export const getGetProjectPrestationsQueryOptions = <
+  TData = Awaited<ReturnType<typeof getProjectPrestations>>,
+  TError = ErrorType<unknown>,
+>(
+  id: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getProjectPrestations>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getGetProjectPrestationsQueryKey(id);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getProjectPrestations>>
+  > = ({ signal }) => getProjectPrestations(id, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: !!id,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof getProjectPrestations>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetProjectPrestationsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getProjectPrestations>>
+>;
+export type GetProjectPrestationsQueryError = ErrorType<unknown>;
+
+/**
+ * @summary Get prestations for a project
+ */
+
+export function useGetProjectPrestations<
+  TData = Awaited<ReturnType<typeof getProjectPrestations>>,
+  TError = ErrorType<unknown>,
+>(
+  id: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getProjectPrestations>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetProjectPrestationsQueryOptions(id, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Get prestation details
+ */
+export const getGetPrestationUrl = (id: string) => {
+  return `/api/prestations/${id}`;
+};
+
+export const getPrestation = async (
+  id: string,
+  options?: RequestInit,
+): Promise<Prestation> => {
+  return customFetch<Prestation>(getGetPrestationUrl(id), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getGetPrestationQueryKey = (id: string) => {
+  return [`/api/prestations/${id}`] as const;
+};
+
+export const getGetPrestationQueryOptions = <
+  TData = Awaited<ReturnType<typeof getPrestation>>,
+  TError = ErrorType<unknown>,
+>(
+  id: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getPrestation>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getGetPrestationQueryKey(id);
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof getPrestation>>> = ({
+    signal,
+  }) => getPrestation(id, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: !!id,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof getPrestation>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetPrestationQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getPrestation>>
+>;
+export type GetPrestationQueryError = ErrorType<unknown>;
+
+/**
+ * @summary Get prestation details
+ */
+
+export function useGetPrestation<
+  TData = Awaited<ReturnType<typeof getPrestation>>,
+  TError = ErrorType<unknown>,
+>(
+  id: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getPrestation>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetPrestationQueryOptions(id, options);
 
   const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
     queryKey: QueryKey;

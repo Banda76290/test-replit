@@ -4,8 +4,8 @@ import { mockAnalyses, generateAnalysisResult } from "../mocks/analyses";
 const router: IRouter = Router();
 
 router.post("/analysis/run", (req, res) => {
-  const { projectId, clientId, taskType, prompt, documentName } = req.body;
-  const result = generateAnalysisResult(taskType, projectId, clientId, prompt);
+  const { prestationId, projectId, taskType, prompt, documentName } = req.body;
+  const result = generateAnalysisResult(taskType, prestationId || projectId, projectId, prompt);
   res.json(result);
 });
 

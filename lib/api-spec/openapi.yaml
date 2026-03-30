@@ -139,7 +139,7 @@ paths:
               schema:
                 type: array
                 items:
-                  $ref: "#/components/schemas/Project"
+                  $ref: "#/components/schemas/Projet"
 
   /projects/{id}:
     get:
@@ -158,7 +158,47 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Project"
+                $ref: "#/components/schemas/Projet"
+
+  /projects/{id}/prestations:
+    get:
+      operationId: getProjectPrestations
+      tags: [projects]
+      summary: Get prestations for a project
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Prestation list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Prestation"
+
+  /prestations/{id}:
+    get:
+      operationId: getPrestation
+      tags: [projects]
+      summary: Get prestation details
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Prestation details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Prestation"
 
   /analysis/run:
     post:
@@ -434,6 +474,8 @@ components:
       properties:
         id:
           type: string
+        ref:
+          type: string
         name:
           type: string
         sector:
@@ -452,16 +494,43 @@ components:
           type: string
         logo:
           type: string
-      required: [id, name, sector, contractStatus, priority, projectCount, recentTickets, latestIntervention, assignedTeam]
+      required: [id, ref, name, sector, contractStatus, priority, projectCount, recentTickets, latestIntervention, assignedTeam]
 
-    Project:
+    Projet:
       type: object
       properties:
         id:
           type: string
         clientId:
           type: string
+        ref:
+          type: string
         name:
+          type: string
+        description:
+          type: string
+        status:
+          type: string
+        prestationCount:
+          type: integer
+        lastUpdated:
+          type: string
+      required: [id, clientId, ref, name, status, prestationCount, lastUpdated]
+
+    Prestation:
+      type: object
+      properties:
+        id:
+          type: string
+        projectId:
+          type: string
+        clientId:
+          type: string
+        ref:
+          type: string
+        name:
+          type: string
+        description:
           type: string
         status:
           type: string
@@ -475,18 +544,22 @@ components:
           type: integer
         nextMilestone:
           type: string
-        description:
-          type: string
         lastUpdated:
           type: string
-      required: [id, clientId, name, status, techStack, health, recentIncidents, nextMilestone, description, lastUpdated]
+        productionUrl:
+          type: string
+        saveUrls:
+          type: array
+          items:
+            type: string
+      required: [id, projectId, clientId, ref, name, status, techStack, health, recentIncidents, nextMilestone, description, lastUpdated, productionUrl]
 
     AnalysisRequest:
       type: object
       properties:
-        projectId:
+        prestationId:
           type: string
-        clientId:
+        projectId:
           type: string
         taskType:
           type: string
@@ -494,7 +567,7 @@ components:
           type: string
         documentName:
           type: string
-      required: [projectId, clientId, taskType, prompt]
+      required: [prestationId, projectId, taskType, prompt]
 
     AnalysisResult:
       type: object

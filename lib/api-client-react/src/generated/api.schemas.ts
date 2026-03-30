@@ -39,6 +39,7 @@ export type DashboardSummarySuggestedActionsItem = {
 
 export interface Client {
   id: string;
+  ref: string;
   name: string;
   sector: string;
   contractStatus: string;
@@ -48,19 +49,6 @@ export interface Client {
   latestIntervention: string;
   assignedTeam: string;
   logo?: string;
-}
-
-export interface Project {
-  id: string;
-  clientId: string;
-  name: string;
-  status: string;
-  techStack: string[];
-  health: string;
-  recentIncidents: number;
-  nextMilestone: string;
-  description: string;
-  lastUpdated: string;
 }
 
 export interface TechnicalPlan {
@@ -121,9 +109,37 @@ export interface DashboardSummary {
   suggestedActions: DashboardSummarySuggestedActionsItem[];
 }
 
-export interface AnalysisRequest {
+export interface Projet {
+  id: string;
+  clientId: string;
+  ref: string;
+  name: string;
+  description?: string;
+  status: string;
+  prestationCount: number;
+  lastUpdated: string;
+}
+
+export interface Prestation {
+  id: string;
   projectId: string;
   clientId: string;
+  ref: string;
+  name: string;
+  description: string;
+  status: string;
+  techStack: string[];
+  health: string;
+  recentIncidents: number;
+  nextMilestone: string;
+  lastUpdated: string;
+  productionUrl: string;
+  saveUrls?: string[];
+}
+
+export interface AnalysisRequest {
+  prestationId: string;
+  projectId: string;
   taskType: string;
   prompt: string;
   documentName?: string;

@@ -1,15 +1,21 @@
 import { Router, type IRouter } from "express";
-import { mockProjects } from "../mocks/projects";
+import { mockProjets } from "../mocks/projets";
+import { mockPrestations } from "../mocks/projects";
 
 const router: IRouter = Router();
 
+router.get("/projects/:id/prestations", (req, res) => {
+  const prestations = mockPrestations.filter((p) => p.projectId === req.params.id);
+  res.json(prestations);
+});
+
 router.get("/projects/:id", (req, res) => {
-  const project = mockProjects.find((p) => p.id === req.params.id);
-  if (!project) {
-    res.status(404).json({ error: "Project not found" });
+  const projet = mockProjets.find((p) => p.id === req.params.id);
+  if (!projet) {
+    res.status(404).json({ error: "Projet not found" });
     return;
   }
-  res.json(project);
+  res.json(projet);
 });
 
 export default router;

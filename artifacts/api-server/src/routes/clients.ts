@@ -1,6 +1,6 @@
 import { Router, type IRouter } from "express";
 import { mockClients } from "../mocks/clients";
-import { mockProjects } from "../mocks/projects";
+import { mockProjets } from "../mocks/projets";
 
 const router: IRouter = Router();
 
@@ -29,8 +29,8 @@ router.get("/clients", (req, res) => {
 });
 
 router.get("/clients/:id/projects", (req, res) => {
-  const projects = mockProjects.filter((p) => p.clientId === req.params.id);
-  res.json(projects);
+  const projets = mockProjets.filter((p) => p.clientId === req.params.id);
+  res.json(projets);
 });
 
 export default router;

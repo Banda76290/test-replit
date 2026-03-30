@@ -8,6 +8,7 @@
 
 export interface Client {
   id: string;
+  ref: string;
   name: string;
   sector: string;
   contractStatus: string;

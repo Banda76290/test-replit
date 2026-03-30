@@ -58,15 +58,27 @@ artifacts-monorepo/
 - **Visual tone**: Premium, restrained, enterprise-grade
 - **Logo**: Text-based placeholder with blue dot accent, no shadows/transforms
 
+## Hiérarchie des données
+
+La société utilise une hiérarchie à 5 niveaux :
+- **Client** (réf. `CLI45872`) — Le client final
+- **Projet** (réf. `PR95721`) — Le projet global d'un client (rare d'en avoir plusieurs par client)
+- **Prestation** (réf. `PRE14602`) — Une prestation spécifique dans un projet. Contient une URL de production + des URL "save" (URL de travail)
+- **Tâche** (réf. `TC00148`) — Tâche dans une prestation (non implémenté)
+- **Checklist** (réf. `CHK98035`) — Checklist dans une tâche (non implémenté)
+
+Parcours utilisateur classique : Clients → Projets → Prestations → Espace de travail (workspace)
+
 ## Pages
 
-1. **Login** (`/login`) — Enterprise SSO simulation with OASIS branding
-2. **Dashboard** (`/`) — Welcome, stats, recent activity, suggested actions
-3. **Clients** (`/clients`) — Client portfolio with search/filters
-4. **Client Projects** (`/clients/:id/projects`) — Project list for selected client
-5. **Workspace** (`/workspace/:projectId`) — AI analysis cockpit (strongest page)
-6. **History** (`/history`) — Analysis history table with filters
-7. **Admin** (`/admin`) — Profile, preferences, recent logins, ZIP export, Git push (admin-only)
+1. **Login** (`/login`) — SSO entreprise simulé avec branding OASIS
+2. **Dashboard** (`/`) — Accueil, statistiques, activité récente, actions suggérées
+3. **Clients** (`/clients`) — Portefeuille clients avec recherche/filtres
+4. **Projets du client** (`/clients/:id/projects`) — Liste des projets d'un client (Projet = niveau PR)
+5. **Prestations du projet** (`/projects/:id/prestations`) — Liste des prestations d'un projet (avec URLs du site)
+6. **Workspace** (`/workspace/:prestationId`) — Cockpit d'analyse IA (page principale)
+7. **Historique** (`/history`) — Tableau des analyses avec filtres
+8. **Admin** (`/admin`) — Profil, préférences, connexions récentes, export ZIP, Git push (admin uniquement)
 
 ## API Endpoints
 
@@ -77,9 +89,11 @@ All mock data served from `artifacts/api-server/src/mocks/`:
 - `POST /api/auth/logout` — Clear session
 - `GET /api/dashboard/summary` — Dashboard data
 - `GET /api/clients` — Client list (supports search, sector, status params)
-- `GET /api/clients/:id/projects` — Projects for a client
-- `GET /api/projects/:id` — Single project
-- `POST /api/analysis/run` — Run AI analysis (simulated)
+- `GET /api/clients/:id/projects` — Projets for a client (returns Projet[])
+- `GET /api/projects/:id` — Single Projet
+- `GET /api/projects/:id/prestations` — Prestations for a project (returns Prestation[])
+- `GET /api/prestations/:id` — Single Prestation (includes productionUrl + saveUrls)
+- `POST /api/analysis/run` — Run AI analysis (accepts prestationId + projectId)
 - `GET /api/analysis/history` — Analysis history
 - `GET /api/analysis/:id` — Single analysis
 - `GET /api/sources/:analysisId` — Sources for analysis

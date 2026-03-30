@@ -15,6 +15,7 @@ import LoginPage from "@/pages/login";
 import DashboardPage from "@/pages/dashboard";
 import ClientsPage from "@/pages/clients";
 import ClientProjectsPage from "@/pages/client-projects";
+import ProjectPrestationsPage from "@/pages/project-prestations";
 import WorkspacePage from "@/pages/workspace";
 import HistoryPage from "@/pages/history";
 import AdminPage from "@/pages/admin";
@@ -41,10 +42,13 @@ function Router() {
       <Route path="/clients/:id/projects">
         <ProtectedRoute><ClientProjectsPage /></ProtectedRoute>
       </Route>
+      <Route path="/projects/:id/prestations">
+        <ProtectedRoute><ProjectPrestationsPage /></ProtectedRoute>
+      </Route>
       <Route path="/workspace">
         <ProtectedRoute><WorkspaceRedirect /></ProtectedRoute>
       </Route>
-      <Route path="/workspace/:projectId">
+      <Route path="/workspace/:prestationId">
         <ProtectedRoute><WorkspacePage /></ProtectedRoute>
       </Route>
       <Route path="/history">
