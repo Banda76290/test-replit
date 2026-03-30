@@ -11,7 +11,7 @@ export function Logo({ className, collapsed = false }: LogoProps) {
       <div className="flex items-center text-foreground">
         <span className="font-bold tracking-tight text-xl">OASIS</span>
         <span className="w-1.5 h-1.5 rounded-full bg-primary mx-1 mt-1"></span>
-        {!collapsed && <span className="font-light tracking-wide text-xl text-muted-foreground">Projet</span>}
+        {!collapsed && <span className="font-light tracking-wide text-xl text-muted-foreground">IA</span>}
       </div>
     </div>
   );
