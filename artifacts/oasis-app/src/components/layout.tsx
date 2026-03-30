@@ -141,7 +141,59 @@ export function AppLayout({ children }: { children: ReactNode }) {
             </nav>
           </div>
 
-          <div className={`mt-auto border-t border-border ${collapsed ? "p-2" : "p-4"}`}>
+          <div className={`mt-auto border-t border-border ${collapsed ? "p-2 space-y-1" : "p-4"}`}>
+            {canSwitch && (
+              <div ref={switcherRef} className="relative mb-3">
+                {collapsed ? (
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="w-full text-muted-foreground hover:text-foreground"
+                        onClick={() => setSwitcherOpen((v) => !v)}
+                      >
+                        <Layers className="h-4 w-4" />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent side="right">{activeService.label}</TooltipContent>
+                  </Tooltip>
+                ) : (
+                  <button
+                    onClick={() => setSwitcherOpen((v) => !v)}
+                    className="w-full flex items-center gap-2 px-2.5 py-2 rounded-lg border border-border bg-muted/40 hover:bg-muted/70 transition-colors text-left"
+                  >
+                    <ServiceIcon className={`h-4 w-4 shrink-0 ${activeService.accentColor}`} />
+                    <span className="flex-1 text-xs font-semibold text-foreground truncate">{activeService.label}</span>
+                    <ChevronDown className={`h-3.5 w-3.5 text-muted-foreground shrink-0 transition-transform ${switcherOpen ? "rotate-180" : ""}`} />
+                  </button>
+                )}
+
+                {switcherOpen && (
+                  <div className={`absolute z-50 bg-popover border border-border rounded-xl shadow-lg py-1 overflow-hidden ${collapsed ? "left-full ml-2 bottom-0 w-52" : "bottom-full mb-1.5 w-full"}`}>
+                    {SERVICE_ORDER.map((id) => {
+                      const svc = SERVICES[id];
+                      const Icon = svc.icon;
+                      const isActive = activeService.id === id;
+                      return (
+                        <button
+                          key={id}
+                          onClick={() => handleServiceSwitch(id)}
+                          className={`w-full flex items-center gap-3 px-3 py-2.5 text-sm transition-colors hover:bg-muted/60 ${isActive ? "bg-primary/5" : ""}`}
+                        >
+                          <Icon className={`h-4 w-4 shrink-0 ${isActive ? "text-primary" : "text-muted-foreground"}`} />
+                          <div className="flex-1 min-w-0 text-left">
+                            <p className={`text-xs font-semibold truncate ${isActive ? "text-primary" : "text-foreground"}`}>{svc.label}</p>
+                          </div>
+                          {isActive && <Check className="h-3.5 w-3.5 text-primary shrink-0" />}
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            )}
+
             {!collapsed ? (
               <>
                 <div className="flex items-center gap-3 px-2 py-2">
