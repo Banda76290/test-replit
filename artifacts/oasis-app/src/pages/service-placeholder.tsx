@@ -97,22 +97,22 @@ function getComingSoonFeatures(href: string): string[] {
       "Évolution du CA mensuel et par commercial",
       "Export vers Excel et intégration CRM",
     ],
-    "/service-client/tickets": [
+    "/client/tickets": [
       "Création et attribution automatique des tickets",
       "Niveaux de priorité et SLA configurables",
       "Historique et fil de discussion par ticket",
     ],
-    "/service-client/communications": [
+    "/client/communications": [
       "Boîte de réception unifiée multi-canal",
       "Réponses automatiques et modèles de messages",
       "Indicateurs de délai de réponse moyen",
     ],
-    "/service-client/suivi": [
+    "/client/suivi": [
       "Fiche client avec historique 360°",
       "Score NPS et indicateurs de satisfaction",
       "Alertes sur clients à risque",
     ],
-    "/service-client/base-connaissance": [
+    "/client/base-connaissance": [
       "Articles classés par thématique et service",
       "Recherche plein texte avec IA",
       "Contributions et revue par les équipes",

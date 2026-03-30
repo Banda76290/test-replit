@@ -111,28 +111,28 @@ export const SERVICES: Record<ServiceId, ServiceConfig> = {
     nav: [
       { href: "/", label: "Tableau de bord", icon: LayoutDashboard },
       {
-        href: "/service-client/tickets",
+        href: "/client/tickets",
         label: "Tickets",
         icon: Ticket,
         isPlaceholder: true,
         placeholderDesc: "Gérez tous les tickets de support, assignez-les aux agents et suivez leur résolution en temps réel.",
       },
       {
-        href: "/service-client/communications",
+        href: "/client/communications",
         label: "Communications",
         icon: MessageSquare,
         isPlaceholder: true,
         placeholderDesc: "Centralisez toutes les interactions client : e-mails, chats, appels et notifications en un espace unifié.",
       },
       {
-        href: "/service-client/suivi",
+        href: "/client/suivi",
         label: "Suivi client",
         icon: UserCheck,
         isPlaceholder: true,
         placeholderDesc: "Consultez l'historique complet de chaque client, ses préférences et ses indicateurs de satisfaction.",
       },
       {
-        href: "/service-client/base-connaissance",
+        href: "/client/base-connaissance",
         label: "Base de connaissances",
         icon: BookOpen,
         isPlaceholder: true,

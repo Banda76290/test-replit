@@ -45,7 +45,7 @@ function Router() {
       <Route path="/commercial/:module">
         <ProtectedRoute><ServicePlaceholderPage /></ProtectedRoute>
       </Route>
-      <Route path="/service-client/:module">
+      <Route path="/client/:module">
         <ProtectedRoute><ServicePlaceholderPage /></ProtectedRoute>
       </Route>
       <Route path="/projet/:module">
