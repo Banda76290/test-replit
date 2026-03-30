@@ -60,7 +60,7 @@ export default function LoginPage() {
                   Authentification en cours...
                 </>
               ) : (
-                "Se connecter via SSO interne"
+                "Se connecter via SSO"
               )}
             </Button>
             
