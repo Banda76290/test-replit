@@ -1,0 +1,31 @@
+kind = "web"
+previewPath = "/"
+title = "OASIS Projet"
+version = "1.0.0"
+id = "artifacts/oasis-app"
+router = "path"
+
+[[integratedSkills]]
+name = "react-vite"
+version = "1.0.0"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 18177
+
+[services.development]
+run = "pnpm --filter @workspace/oasis-app run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/oasis-app", "run", "build" ]
+publicDir = "artifacts/oasis-app/dist/public"
+serve = "static"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "18177"
+BASE_PATH = "/"

@@ -1,0 +1,511 @@
+You are a senior full-stack engineer, product designer, TypeScript architect, and enterprise UX specialist. You build premium internal B2B applications with React and Node.js, focusing on maintainability, modularity, clean architecture, strong visual hierarchy, and demo-ready quality.
+
+Your task: generate a complete internal Meta SaaS application for developers. This is not a throwaway prototype and not a generic AI dashboard. It must be a realistic, polished, premium internal platform that can be shown to executive stakeholders, used for UX review, and later connected to a real enterprise AI infrastructure.
+
+The app must work today using mock data, placeholders, and fake backend services, while being structured so those mocks can later be replaced by real APIs with minimal refactoring.
+
+Product context
+
+This Meta SaaS is an internal product for developers working on multiple client ecommerce SaaS platforms.
+This application does NOT contain the real AI logic.
+Real intelligence will later live in the company infrastructure:
+- AI agents
+- RAG services
+- governance and access control
+- centralized authentication
+- internal tools
+- enterprise services
+- connectors
+- LLM / SLM services
+
+This Meta SaaS is the premium user-facing interface layer.
+
+It must allow a developer to:
+- sign in through a simulated enterprise SSO flow
+- access profile and preferences
+- select a client
+- select a client site / SaaS project
+- inject a working document or request
+- choose an analysis type
+- run a simulated AI analysis
+- receive a structured simulated AI response
+- review simulated sources
+- review a simulated technical implementation plan
+- review a simulated code diff
+- provide feedback
+- browse history
+- manage profile and preferences
+
+Core technical requirements
+
+1. Frontend must be built with React + TypeScript.
+2. Backend must be built with Node.js + TypeScript.
+3. Backend acts as a lightweight BFF and mock API layer.
+4. Frontend must never read mocks directly.
+5. All data shown in the UI must come from simulated API calls.
+6. Code must be modular, clean, maintainable, and easy to extend.
+7. Mock data must be coherent across the entire app.
+8. The result must feel ready for internal demo and user testing.
+9. The visual design must be premium, restrained, modern, enterprise-grade, and developer-oriented.
+10. Future real APIs must be easy to plug in.
+
+Brand and design system requirements: OASIS Projet
+
+You must strictly follow this visual identity for theme, CSS, design system, branding behavior, and UI decisions.
+
+Brand:
+- OASIS Projet
+- visual tone: premium, modern, elegant, simple, rounded, professional
+
+Primary colors:
+- primary blue: #0096C3
+- black: #000000
+- white: #FFFFFF
+
+Allowed variations:
+- darker shades of the primary blue mixed toward black
+- use those shades for hover states, borders, muted backgrounds, accents, badges, separators, and secondary emphasis
+
+Typography:
+- primary font family: Montserrat
+- allowed weights: light, regular, medium, semi-bold, bold, extra-bold, thin, black
+- all UI text must use Montserrat
+- typography must feel premium, clear, elegant, and modern
+
+Logo handling:
+- create a dedicated brand/logo area in the app shell
+- never distort the logo
+- never rotate the logo
+- never recolor it outside of brand rules
+- never alter proportions, typography, or internal structure
+- never add decorative effects such as strong shadows, bevels, or 3D effects
+- preserve clear space around the logo
+- if the actual asset is unavailable, use a clean explicit logo placeholder component
+- prepare layout support for:
+  - main logo
+  - horizontal logo
+  - compact OP monogram
+- on dark backgrounds, support white / blue or white versions
+- on light backgrounds, prefer the standard black / blue version
+
+Baseline support:
+- official baseline: “Solutions digitales”
+- use Montserrat Semi-Bold
+- allow optional display in login screen, header, or presentation areas
+
+Global visual style:
+- premium enterprise interface
+- clean lines
+- generous spacing
+- elegant panels and cards
+- restrained use of shadows
+- mostly white and very light neutral backgrounds
+- black and dark neutral text
+- primary accent color must be OASIS blue
+- no flashy gradients unrelated to the brand
+- no noisy visuals
+- no trendy gimmicks
+- iconography should be consistent, line-based, clear, and aligned with blue/black brand usage
+
+Optional visual motif:
+- you may reuse the dot / monogram logic very subtly as a micro visual cue
+- only in discreet ways such as separators, block accents, or tiny decorative anchors
+- never let motif usage reduce readability
+
+UX goal
+
+This product should feel like an intelligent internal cockpit for developers.
+
+The main flow must be obvious:
+1. login
+2. dashboard
+3. client selection
+4. project selection
+5. inject task or document
+6. launch simulated AI analysis
+7. review structured results
+8. inspect technical plan and diff
+9. provide feedback
+
+Expected architecture
+
+Build a full-stack application with:
+- React + TypeScript frontend
+- Node.js + TypeScript backend
+- clear folder structure
+- isolated frontend API services
+- centralized mocks
+- reusable UI components
+- multiple pages
+- realistic fake API interactions
+- simple but coherent design system
+
+You may use:
+- React
+- Vite
+- React Router
+- Express
+- Tailwind or clean CSS solution if the result is premium and maintainable
+- simple state management
+- clear separation of concerns
+
+Features to implement
+
+1. Enterprise login screen
+
+Create a premium login page with:
+- OASIS Projet branding
+- logo or clean logo placeholder
+- product title
+- professional subtitle
+- “Sign in with internal SSO” button
+- short enterprise context text
+- optional “Solutions digitales” baseline
+- simulated loading and redirect
+
+2. Main dashboard
+
+Create a high-quality dashboard with:
+- personalized welcome block
+- user summary
+- shortcut cards
+- recent clients
+- recent projects
+- recent analyses
+- recent activities
+- recently injected documents
+- suggested actions
+- polished cards and layout hierarchy
+
+3. Clients page
+
+Create a client selection page with:
+- search
+- filters
+- clean grid or table
+- multiple realistic mocked clients
+
+Each client should show:
+- name
+- business sector
+- contract status
+- priority level
+- number of projects
+- number of recent tickets
+- latest intervention
+- assigned team
+
+4. Client project page
+
+After selecting a client, show associated SaaS/projects with:
+- status badges
+- technical stack
+- simulated project health
+- recent incidents
+- next milestone
+- entry point to workspace
+
+5. Developer workspace
+
+This must be the strongest page in the product.
+
+Build a highly polished workspace page containing:
+- client/project context header
+- task type selector
+- prompt / request input
+- document upload panel
+- run analysis action
+- loading simulation
+- structured AI result area
+- sources panel
+- technical plan panel
+- diff panel
+- feedback panel
+- context timeline
+- confidence score
+- tags / badges for risk and relevance
+
+The page must look impressive, clear, highly usable, and executive-demo ready.
+
+6. Task types
+
+Include mocked task types such as:
+- analyze a need
+- propose an implementation
+- analyze impact
+- generate a technical plan
+- generate documentation
+- prepare a technical response
+- propose a fix
+- produce a simulated diff
+
+7. Simulated AI result
+
+Display a rich structured result including:
+- executive summary
+- understanding of the request
+- project context
+- related history
+- identified risks
+- affected functional areas
+- potentially impacted components
+- recommended approach
+- suggested steps
+- dependencies to monitor
+- simulated confidence score
+- overall simulated status
+
+8. Sources panel
+
+Create a rich “Sources used” panel with categories:
+- source code
+- support tickets
+- commercial data
+- reporting history
+- project checklists
+- past interventions
+
+Each source entry must include:
+- type
+- title
+- date
+- origin
+- excerpt
+- simulated relevance score
+- category icon
+- expandable details or filtering behavior
+
+9. Technical plan panel
+
+Create a detailed panel with:
+- objective
+- impacted components
+- recommended action sequence
+- prerequisites
+- dependencies
+- risks
+- tests to plan
+- simulated complexity estimate
+- simulated effort estimate
+
+10. Diff viewer
+
+Create a premium simulated diff viewer with:
+- impacted files
+- before / after snippets
+- additions
+- deletions
+- summary of changes
+- risk labels
+- elegant technical presentation
+
+11. Feedback panel
+
+Allow the developer to:
+- accept
+- reject
+- request a variant
+- add a comment
+- rate relevance
+- flag an issue
+
+12. Analysis history page
+
+Create a history page with:
+- list of analyses
+- filters
+- client
+- project
+- task type
+- date
+- status
+- preview summary
+- reopen action
+
+13. Admin / profile / preferences area
+
+Create a profile/admin area with:
+- account info
+- team
+- role
+- email
+- recent logins
+- UI preferences
+- response preferences
+- activity history
+- fake logs
+- session settings
+- notifications
+
+14. Navigation
+
+Create clear app navigation such as:
+- dashboard
+- clients
+- projects
+- workspace
+- analyses
+- history
+- admin
+- profile
+
+15. Interface states
+
+Implement polished states for:
+- empty
+- loading
+- error
+- success
+- partial data
+- analysis running
+- result available
+
+Mock data to create
+
+Create rich, coherent mock datasets for:
+- users
+- roles
+- permissions
+- clients
+- projects
+- workDocuments
+- aiAnalyses
+- aiRecommendations
+- aiSources
+- technicalPlans
+- codeDiffs
+- activities
+- preferences
+- notifications
+- dashboard summaries
+
+Create realistic clients such as:
+- premium fashion brand
+- B2B distributor
+- high-tech ecommerce player
+- omnichannel retail brand
+
+Create realistic projects such as:
+- checkout redesign
+- promotion engine optimization
+- shipping connector evolution
+- checkout issue fix
+- catalog personalization
+- B2B flow adaptation
+
+Create several analysis scenarios:
+- simple request analysis
+- impact analysis
+- bug fix proposal
+- implementation proposal
+- technical documentation generation
+
+Required reusable components
+
+Create and use reusable components such as:
+- AppShell
+- Sidebar
+- Topbar
+- BrandHeader
+- UserMenu
+- ClientSelector
+- ProjectSelector
+- SearchFilters
+- UploadPanel
+- PromptInput
+- TaskTypeSelector
+- AnalysisResultCard
+- AnalysisSummaryPanel
+- SourcesPanel
+- SourceCard
+- DiffViewer
+- TechnicalPlanPanel
+- ConfidenceScore
+- RiskBadge
+- ActivityTimeline
+- FeedbackPanel
+- PreferencesPanel
+- AdminSettingsPanel
+- EmptyState
+- LoadingState
+- ErrorState
+
+Mock backend API endpoints
+
+Implement backend endpoints such as:
+- GET /api/me
+- GET /api/clients
+- GET /api/clients/:id/projects
+- GET /api/projects/:id
+- POST /api/analysis/run
+- GET /api/analysis/history
+- GET /api/analysis/:id
+- GET /api/sources/:analysisId
+- GET /api/diff/:analysisId
+- GET /api/preferences
+- PUT /api/preferences
+- GET /api/activity
+- GET /api/admin/profile
+- GET /api/dashboard/summary
+
+Simulation behavior
+
+When the user runs an analysis:
+- simulate delay
+- show progress
+- return a rich structured response
+- vary outputs based on task type and selected project
+- make the app feel alive and believable
+
+Expected code structure
+
+I want:
+- clean project tree
+- separated TypeScript types
+- organized mocks
+- separated backend routes
+- separated frontend API services
+- reusable components
+- page-based structure
+- coherent visual tokens/theme
+- short README explaining the structure
+
+Design requirements
+
+1. The result must feel premium and executive-demo ready.
+2. The workspace page must be the strongest and most refined page.
+3. OASIS Projet branding must be respected without becoming visually heavy.
+4. Use #0096C3 as the main accent color.
+5. Use Montserrat everywhere.
+6. Maintain clean contrast and readability.
+7. Ensure strong consistency across cards, tables, badges, and panels.
+8. Make placeholders elegant and believable.
+9. The app must communicate rigor, modernity, and control.
+10. Avoid generic startup aesthetics, weak dashboards, or lazy default styling.
+
+Work method
+
+Proceed in this order:
+1. define the project tree
+2. scaffold frontend and backend
+3. define TypeScript models
+4. create mock datasets
+5. build frontend API services
+6. build the app shell
+7. build key pages
+8. connect fake API calls
+9. polish the design
+10. write the README
+
+Important
+
+Do not only explain what you would do.
+Generate the actual code and structure.
+Whenever a technical choice must be made, prioritize:
+- readability
+- modularity
+- perceived quality
+- maintainability
+- future compatibility with real infrastructure APIs
+
+The final result must look like a real premium OASIS Projet internal product, ready for executive demo, with all major product flows visible and all critical AI/infrastructure features represented through realistic placeholders.

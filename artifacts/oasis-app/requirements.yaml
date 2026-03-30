@@ -1,0 +1,13 @@
+packages:
+  "framer-motion": "For smooth transitions between workspace states and page navigations"
+  "date-fns": "For formatting timestamps in history and dashboard"
+  "clsx": "Utility for constructing className strings conditionally"
+  "tailwind-merge": "Utility for merging tailwind classes safely"
+  "@workspace/api-client-react": "Generated API hooks"
+
+images: []
+
+notes:
+  - "Using generated API hooks from @workspace/api-client-react"
+  - "Assuming light theme as primary based on 'white and very light neutral backgrounds' constraint"
+  - "Authentication is managed via a React Context using the /api/me and /api/auth/login endpoints"
