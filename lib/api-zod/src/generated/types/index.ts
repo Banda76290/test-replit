@@ -28,3 +28,4 @@ export * from "./source";
 export * from "./submitFeedback200";
 export * from "./technicalPlan";
 export * from "./user";
+export * from "./userService";

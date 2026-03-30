@@ -9,6 +9,16 @@ export interface HealthStatus {
   status: string;
 }
 
+export type UserService = (typeof UserService)[keyof typeof UserService];
+
+export const UserService = {
+  dev: "dev",
+  commercial: "commercial",
+  client: "client",
+  projet: "projet",
+  direction: "direction",
+} as const;
+
 export interface User {
   id: string;
   name: string;
@@ -17,6 +27,8 @@ export interface User {
   team: string;
   avatar?: string;
   isAdmin?: boolean;
+  service?: UserService;
+  canAccessAllServices?: boolean;
 }
 
 export type DashboardSummarySuggestedActionsItem = {

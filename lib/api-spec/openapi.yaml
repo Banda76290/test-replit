@@ -381,6 +381,11 @@ components:
           type: string
         isAdmin:
           type: boolean
+        service:
+          type: string
+          enum: [dev, commercial, client, projet, direction]
+        canAccessAllServices:
+          type: boolean
       required: [id, name, email, role, team]
 
     DashboardSummary:

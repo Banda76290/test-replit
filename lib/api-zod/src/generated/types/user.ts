@@ -5,6 +5,7 @@
  * OASIS Projet API specification
  * OpenAPI spec version: 0.1.0
  */
+import type { UserService } from "./userService";
 
 export interface User {
   id: string;
@@ -14,4 +15,6 @@ export interface User {
   team: string;
   avatar?: string;
   isAdmin?: boolean;
+  service?: UserService;
+  canAccessAllServices?: boolean;
 }

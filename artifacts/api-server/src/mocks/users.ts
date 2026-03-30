@@ -6,4 +6,6 @@ export const mockUser = {
   team: "Platform Engineering",
   avatar: "",
   isAdmin: true,
+  service: "dev" as const,
+  canAccessAllServices: true,
 };

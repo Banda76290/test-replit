@@ -1,14 +1,13 @@
-import { ReactNode, useState, useEffect } from "react";
+import { ReactNode, useState, useEffect, useRef } from "react";
 import { Link, useLocation } from "wouter";
 import { useAuth } from "@/hooks/use-auth";
 import { useTheme } from "@/hooks/use-theme";
+import { useService } from "@/hooks/use-service";
+import { SERVICE_ORDER, SERVICES } from "@/lib/service-config";
+import type { ServiceId } from "@/lib/service-config";
 import { Logo } from "./logo";
-import { 
-  LayoutDashboard, 
-  Users, 
-  FolderKanban, 
-  History, 
-  Settings, 
+import {
+  Settings,
   LogOut,
   Bell,
   Search,
@@ -17,14 +16,18 @@ import {
   ChevronRight,
   Sun,
   Moon,
+  ChevronDown,
+  Check,
+  Layers,
 } from "lucide-react";
 import { Button } from "./ui/button";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "./ui/tooltip";
 
 export function AppLayout({ children }: { children: ReactNode }) {
-  const [location] = useLocation();
+  const [location, navigate] = useLocation();
   const { user, logout } = useAuth();
   const { theme, toggleTheme } = useTheme();
+  const { activeService, setService, canSwitch } = useService();
   const [collapsed, setCollapsed] = useState(() => {
     try {
       return localStorage.getItem("sidebar-collapsed") === "true";
@@ -32,6 +35,8 @@ export function AppLayout({ children }: { children: ReactNode }) {
       return false;
     }
   });
+  const [switcherOpen, setSwitcherOpen] = useState(false);
+  const switcherRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     try {
@@ -39,13 +44,26 @@ export function AppLayout({ children }: { children: ReactNode }) {
     } catch {}
   }, [collapsed]);
 
-  const navItems = [
-    { href: "/", label: "Tableau de bord", icon: LayoutDashboard },
-    { href: "/clients", label: "Clients", icon: Users },
-    { href: "/workspace", label: "Espace de travail", icon: FolderKanban, startsWith: true },
-    { href: "/history", label: "Historique", icon: History },
-    { href: "/admin", label: "Admin & Profil", icon: Settings },
-  ];
+  useEffect(() => {
+    if (!switcherOpen) return;
+    function handleClickOutside(e: MouseEvent) {
+      if (switcherRef.current && !switcherRef.current.contains(e.target as Node)) {
+        setSwitcherOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [switcherOpen]);
+
+  const navItems = activeService.nav;
+
+  function handleServiceSwitch(id: ServiceId) {
+    setSwitcherOpen(false);
+    setService(id);
+    navigate("/");
+  }
+
+  const ServiceIcon = activeService.icon;
 
   return (
     <TooltipProvider delayDuration={100}>
@@ -88,12 +106,65 @@ export function AppLayout({ children }: { children: ReactNode }) {
             )}
           </div>
 
-          <div className={`flex-1 p-2 ${collapsed ? "px-2" : "p-4"}`}>
-            {!collapsed && (
-              <p className="text-xs font-medium text-muted-foreground px-2 mb-2 uppercase tracking-wider">
-                Solutions Digitales
-              </p>
+          <div className={`flex-1 ${collapsed ? "px-2 py-3" : "p-4"}`}>
+            {canSwitch ? (
+              <div ref={switcherRef} className={`relative mb-3 ${collapsed ? "" : ""}`}>
+                {collapsed ? (
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="w-full text-muted-foreground hover:text-foreground"
+                        onClick={() => setSwitcherOpen((v) => !v)}
+                      >
+                        <Layers className="h-4 w-4" />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent side="right">{activeService.label}</TooltipContent>
+                  </Tooltip>
+                ) : (
+                  <button
+                    onClick={() => setSwitcherOpen((v) => !v)}
+                    className="w-full flex items-center gap-2 px-2.5 py-2 rounded-lg border border-border bg-muted/40 hover:bg-muted/70 transition-colors text-left group"
+                  >
+                    <ServiceIcon className={`h-4 w-4 shrink-0 ${activeService.accentColor}`} />
+                    <span className="flex-1 text-xs font-semibold text-foreground truncate">{activeService.label}</span>
+                    <ChevronDown className={`h-3.5 w-3.5 text-muted-foreground shrink-0 transition-transform ${switcherOpen ? "rotate-180" : ""}`} />
+                  </button>
+                )}
+
+                {switcherOpen && (
+                  <div className={`absolute z-50 bg-popover border border-border rounded-xl shadow-lg py-1 overflow-hidden ${collapsed ? "left-full ml-2 top-0 w-52" : "top-full mt-1.5 w-full"}`}>
+                    {SERVICE_ORDER.map((id) => {
+                      const svc = SERVICES[id];
+                      const Icon = svc.icon;
+                      const isActive = activeService.id === id;
+                      return (
+                        <button
+                          key={id}
+                          onClick={() => handleServiceSwitch(id)}
+                          className={`w-full flex items-center gap-3 px-3 py-2.5 text-sm transition-colors hover:bg-muted/60 ${isActive ? "bg-primary/5 text-primary" : "text-foreground"}`}
+                        >
+                          <Icon className={`h-4 w-4 shrink-0 ${isActive ? "text-primary" : "text-muted-foreground"}`} />
+                          <div className="flex-1 min-w-0 text-left">
+                            <p className={`text-xs font-semibold truncate ${isActive ? "text-primary" : "text-foreground"}`}>{svc.label}</p>
+                          </div>
+                          {isActive && <Check className="h-3.5 w-3.5 text-primary shrink-0" />}
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            ) : (
+              !collapsed && (
+                <p className="text-xs font-medium text-muted-foreground px-2 mb-3 uppercase tracking-wider">
+                  {activeService.shortLabel}
+                </p>
+              )
             )}
+
             <nav className="space-y-1">
               {navItems.map((item) => {
                 const isActive = item.startsWith
@@ -158,7 +229,6 @@ export function AppLayout({ children }: { children: ReactNode }) {
                 <TooltipContent side="right">Se déconnecter</TooltipContent>
               </Tooltip>
             )}
-
           </div>
         </aside>
 

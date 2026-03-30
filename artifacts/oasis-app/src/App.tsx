@@ -4,9 +4,9 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider, useAuth } from "@/hooks/use-auth";
 import { ThemeProvider } from "@/hooks/use-theme";
+import { ServiceProvider } from "@/hooks/use-service";
 import { ProtectedRoute } from "@/components/protected-route";
 
-// Pages
 import NotFound from "@/pages/not-found";
 import LoginPage from "@/pages/login";
 import DashboardPage from "@/pages/dashboard";
@@ -15,6 +15,7 @@ import ClientProjectsPage from "@/pages/client-projects";
 import WorkspacePage from "@/pages/workspace";
 import HistoryPage from "@/pages/history";
 import AdminPage from "@/pages/admin";
+import ServicePlaceholderPage from "@/pages/service-placeholder";
 
 const queryClient = new QueryClient();
 
@@ -40,8 +41,36 @@ function Router() {
       <Route path="/admin">
         <ProtectedRoute><AdminPage /></ProtectedRoute>
       </Route>
+
+      <Route path="/commercial/:module">
+        <ProtectedRoute><ServicePlaceholderPage /></ProtectedRoute>
+      </Route>
+      <Route path="/service-client/:module">
+        <ProtectedRoute><ServicePlaceholderPage /></ProtectedRoute>
+      </Route>
+      <Route path="/projet/:module">
+        <ProtectedRoute><ServicePlaceholderPage /></ProtectedRoute>
+      </Route>
+      <Route path="/direction/:module">
+        <ProtectedRoute><ServicePlaceholderPage /></ProtectedRoute>
+      </Route>
+
       <Route component={NotFound} />
     </Switch>
+  );
+}
+
+function ServicedApp() {
+  const { user } = useAuth();
+  return (
+    <ServiceProvider
+      userId={user?.id}
+      userService={user?.service}
+      canAccessAllServices={user?.canAccessAllServices}
+    >
+      <Router />
+      <Toaster />
+    </ServiceProvider>
   );
 }
 
@@ -49,8 +78,7 @@ function ThemedApp() {
   const { user } = useAuth();
   return (
     <ThemeProvider userId={user?.id}>
-      <Router />
-      <Toaster />
+      <ServicedApp />
     </ThemeProvider>
   );
 }

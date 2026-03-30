@@ -25,6 +25,10 @@ export const GetMeResponse = zod.object({
   team: zod.string(),
   avatar: zod.string().optional(),
   isAdmin: zod.boolean().optional(),
+  service: zod
+    .enum(["dev", "commercial", "client", "projet", "direction"])
+    .optional(),
+  canAccessAllServices: zod.boolean().optional(),
 });
 
 /**
@@ -42,6 +46,10 @@ export const LoginResponse = zod.object({
   team: zod.string(),
   avatar: zod.string().optional(),
   isAdmin: zod.boolean().optional(),
+  service: zod
+    .enum(["dev", "commercial", "client", "projet", "direction"])
+    .optional(),
+  canAccessAllServices: zod.boolean().optional(),
 });
 
 /**
@@ -443,6 +451,10 @@ export const GetAdminProfileResponse = zod.object({
     team: zod.string(),
     avatar: zod.string().optional(),
     isAdmin: zod.boolean().optional(),
+    service: zod
+      .enum(["dev", "commercial", "client", "projet", "direction"])
+      .optional(),
+    canAccessAllServices: zod.boolean().optional(),
   }),
   recentLogins: zod.array(
     zod.object({
