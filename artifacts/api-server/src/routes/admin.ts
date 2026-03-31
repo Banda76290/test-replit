@@ -2,41 +2,19 @@ import { Router, type IRouter } from "express";
 import { mockUser } from "../mocks/users";
 import { mockActivities } from "../mocks/activities";
 import { requireAdmin } from "../lib/session";
-import archiver from "archiver";
 import { simpleGit } from "simple-git";
 import path from "path";
-import os from "os";
 import fs from "fs";
-import { execFile } from "child_process";
+import { execFile, spawn } from "child_process";
 import { promisify } from "util";
 
 const execFileAsync = promisify(execFile);
 
 const router: IRouter = Router();
 
-// ── Répertoire racine du projet ───────────────────────────────────────────
-// En développement Replit : résolution relative depuis api-server.
-// En production Docker/Kubernetes : définir OASIS_PROJECT_ROOT dans l'env
-// (ex: /app/workspace ou un volume monté via docker-compose / K8s PVC).
 const PROJECT_ROOT = process.env.OASIS_PROJECT_ROOT
   ?? path.resolve(process.cwd(), "../..");
 
-const EXCLUDE_GLOBS = [
-  "node_modules/**",
-  ".git/**",
-  "dist/**",
-  ".local/**",
-  ".env",
-  ".env.local",
-  ".env.*.local",
-  ".cache/**",
-  ".replit",
-  "replit.nix",
-  ".config/**",
-  "*.tsbuildinfo",
-];
-
-// ── Vérifie si git est disponible dans le PATH du container ──────────────
 async function isGitAvailable(): Promise<boolean> {
   try {
     await execFileAsync("git", ["--version"]);
@@ -46,22 +24,29 @@ async function isGitAvailable(): Promise<boolean> {
   }
 }
 
-// ── Vérifie si PROJECT_ROOT est un dépôt git ; l'initialise si besoin ───
 async function ensureGitRepo(git: ReturnType<typeof simpleGit>): Promise<void> {
   try {
     await git.status();
   } catch {
-    // Pas de dépôt git → on l'initialise et on crée un commit initial
     await git.init();
     await git.addConfig("user.email", "oasis@local");
     await git.addConfig("user.name", "OASIS Export");
     await git.add(".");
     try {
       await git.commit("chore: export initial OASIS");
-    } catch {
-      // Commit peut échouer si rien à committer, on continue
-    }
+    } catch {}
   }
+}
+
+async function ensureCleanHead(git: ReturnType<typeof simpleGit>): Promise<void> {
+  const status = await git.status();
+  if (status.files.length === 0) return;
+  await git.addConfig("user.email", "oasis@local");
+  await git.addConfig("user.name", "OASIS Export");
+  await git.add(".");
+  try {
+    await git.commit(`chore: export OASIS — ${new Date().toISOString()}`);
+  } catch {}
 }
 
 router.get("/admin/profile", (_req, res) => {
@@ -83,9 +68,19 @@ router.get("/admin/profile", (_req, res) => {
 });
 
 // ── GET /api/admin/export ─────────────────────────────────────────────────
-// Génère un ZIP du code source et le streame en réponse.
-// Compatible Docker/K8s : utilise OASIS_PROJECT_ROOT si défini.
+// Utilise `git archive HEAD --format=zip` pour générer un ZIP agnostique.
+// Les exclusions sont pilotées uniquement par le .gitignore — plus besoin
+// d'une liste manuelle. Compatible Docker / Kubernetes.
 router.get("/admin/export", requireAdmin, async (_req, res) => {
+  const gitOk = await isGitAvailable();
+  if (!gitOk) {
+    res.status(500).json({
+      error: "Git n'est pas installé dans cet environnement.",
+      details: "Ajoutez git à l'image Docker (ex: RUN apt-get install -y git).",
+    });
+    return;
+  }
+
   if (!fs.existsSync(PROJECT_ROOT)) {
     res.status(500).json({
       error: `Répertoire source introuvable : ${PROJECT_ROOT}. Définissez OASIS_PROJECT_ROOT dans les variables d'environnement.`,
@@ -93,43 +88,42 @@ router.get("/admin/export", requireAdmin, async (_req, res) => {
     return;
   }
 
-  const tmpFile = path.join(os.tmpdir(), `oasis-export-${Date.now()}.zip`);
-
   try {
-    const output = fs.createWriteStream(tmpFile);
-    const archive = archiver("zip", { zlib: { level: 9 } });
+    const git = simpleGit(PROJECT_ROOT);
+    await ensureGitRepo(git);
+    await ensureCleanHead(git);
 
-    await new Promise<void>((resolve, reject) => {
-      output.on("close", resolve);
-      output.on("error", reject);
-      archive.on("error", reject);
-
-      archive.pipe(output);
-      archive.glob("**/*", {
-        cwd: PROJECT_ROOT,
-        ignore: EXCLUDE_GLOBS,
-        dot: true,
-      });
-      archive.finalize();
-    });
-
-    const stat = fs.statSync(tmpFile);
     res.set({
       "Content-Type": "application/zip",
       "Content-Disposition": "attachment; filename=oasis-projet-export.zip",
-      "Content-Length": stat.size.toString(),
       "X-Export-Path": PROJECT_ROOT,
     });
 
-    const readStream = fs.createReadStream(tmpFile);
-    const cleanup = () => fs.unlink(tmpFile, () => {});
-    readStream.on("end", cleanup);
-    readStream.on("error", cleanup);
-    res.on("close", cleanup);
-    readStream.pipe(res);
+    const archive = spawn("git", ["archive", "HEAD", "--format=zip"], {
+      cwd: PROJECT_ROOT,
+      stdio: ["ignore", "pipe", "pipe"],
+    });
+
+    let stderr = "";
+    archive.stderr.on("data", (chunk: Buffer) => { stderr += chunk.toString(); });
+
+    archive.stdout.pipe(res);
+
+    archive.on("close", (code) => {
+      if (code !== 0 && !res.headersSent) {
+        res.status(500).json({ error: "Échec de git archive", details: stderr });
+      }
+    });
+
+    archive.on("error", (err) => {
+      if (!res.headersSent) {
+        res.status(500).json({ error: "Échec de git archive", details: err.message });
+      }
+    });
   } catch (error: any) {
-    fs.unlink(tmpFile, () => {});
-    res.status(500).json({ error: "Échec de l'export", details: error.message });
+    if (!res.headersSent) {
+      res.status(500).json({ error: "Échec de l'export", details: error.message });
+    }
   }
 });
 
@@ -145,17 +139,15 @@ router.post("/admin/git-push", requireAdmin, async (req, res) => {
     return;
   }
 
-  // 1. Vérifier que git est disponible dans le container
   const gitOk = await isGitAvailable();
   if (!gitOk) {
     res.status(500).json({
       error: "Git n'est pas installé dans cet environnement.",
-      details: "Ajoutez `git` à l'image Docker (ex: RUN apt-get install -y git) ou montez un volume avec git disponible.",
+      details: "Ajoutez git à l'image Docker (ex: RUN apt-get install -y git).",
     });
     return;
   }
 
-  // 2. Vérifier que le répertoire source existe
   if (!fs.existsSync(PROJECT_ROOT)) {
     res.status(500).json({
       error: `Répertoire source introuvable : ${PROJECT_ROOT}. Définissez OASIS_PROJECT_ROOT dans les variables d'environnement.`,
@@ -179,23 +171,8 @@ router.post("/admin/git-push", requireAdmin, async (req, res) => {
     });
 
     await git.addConfig("credential.helper", "");
-
-    // 3. S'assurer qu'un repo git existe (sinon l'initialiser)
     await ensureGitRepo(git);
-
-    // 4. S'assurer que les modifications non committées sont commitées
-    // (nécessaire dans les containers où le code a été copié sans .git)
-    const status = await git.status();
-    if (status.files.length > 0) {
-      await git.addConfig("user.email", "oasis@local");
-      await git.addConfig("user.name", "OASIS Export");
-      await git.add(".");
-      try {
-        await git.commit(`chore: export OASIS — ${new Date().toISOString()}`);
-      } catch {
-        // Ignore si rien à committer
-      }
-    }
+    await ensureCleanHead(git);
 
     await git.addRemote(remoteName, authUrl);
 
@@ -204,8 +181,7 @@ router.post("/admin/git-push", requireAdmin, async (req, res) => {
     } finally {
       try {
         await git.removeRemote(remoteName);
-      } catch {
-      }
+      } catch {}
     }
 
     res.json({
@@ -217,8 +193,7 @@ router.post("/admin/git-push", requireAdmin, async (req, res) => {
     try {
       const git = simpleGit(PROJECT_ROOT);
       await git.removeRemote(remoteName);
-    } catch {
-    }
+    } catch {}
 
     const sanitized = (error.message || "")
       .replace(/x-access-token:[^@]+@/g, "x-access-token:***@")

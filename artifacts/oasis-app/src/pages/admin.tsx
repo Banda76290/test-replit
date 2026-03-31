@@ -207,22 +207,19 @@ function ExportCard() {
       <CardContent className="p-6 space-y-4">
         <div className="bg-muted/20 rounded-lg p-4 border border-border/40 space-y-3">
           <div>
-            <p className="text-sm text-muted-foreground mb-2 font-medium">Fichiers exclus de l'archive :</p>
-            <div className="flex flex-wrap gap-2">
-              {["node_modules", ".git", "dist", ".local", ".env", ".cache"].map(item => (
-                <span key={item} className="px-2 py-1 bg-muted text-muted-foreground rounded text-xs font-mono border border-border">
-                  {item}
-                </span>
-              ))}
-            </div>
+            <p className="text-sm text-muted-foreground font-medium">
+              L'archive contient uniquement les fichiers tracés par Git.
+              Les exclusions sont pilotées par le <code className="bg-muted px-1 rounded text-[11px]">.gitignore</code> du projet — aucune liste manuelle à maintenir.
+            </p>
           </div>
           <div className="pt-2 border-t border-border/40">
             <p className="text-xs text-muted-foreground">
               <span className="font-semibold text-foreground">Docker / Kubernetes :</span>{" "}
-              Définissez la variable d'environnement{" "}
+              Définissez{" "}
               <code className="bg-muted px-1 rounded text-[11px]">OASIS_PROJECT_ROOT</code>{" "}
               dans votre <code className="bg-muted px-1 rounded text-[11px]">docker-compose.yml</code> ou manifest K8s
-              pour pointer vers le volume monté contenant le code source.
+              pour pointer vers le volume contenant le code source.
+              Assurez-vous que <code className="bg-muted px-1 rounded text-[11px]">git</code> est installé dans l'image.
             </p>
           </div>
         </div>
