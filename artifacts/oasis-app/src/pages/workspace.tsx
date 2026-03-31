@@ -581,6 +581,13 @@ function CodeViewer({ file, onClose, prodUrl, saveUrl, editContent, onEditChange
     }
   }, [scrollToLine]);
 
+  useEffect(() => {
+    const timeout = setTimeout(() => {
+      editorRef.current?.layout();
+    }, 50);
+    return () => clearTimeout(timeout);
+  }, [isFullscreen]);
+
   const handleCopy = () => {
     const content = tab === "edit" ? editContent : originalCode;
     navigator.clipboard.writeText(content).then(() => {

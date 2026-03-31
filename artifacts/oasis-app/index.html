@@ -8,12 +8,16 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-  </head>
-  <body>
-    <div id="root"></div>
-    <!-- Suppress non-Error unhandled rejections (Monaco Editor CDN worker failures)
-         before Vite's runtime-error-overlay installs its own handler. -->
+    <!-- Provide Monaco Editor with a no-op local worker so it never tries to
+         fetch workers from the CDN (which fails in Replit's sandboxed env and
+         causes non-Error rejections that crash the preview iframe). -->
     <script>
+      self.MonacoEnvironment = {
+        getWorker: function() {
+          var blob = new Blob([''], { type: 'application/javascript' });
+          return new Worker(URL.createObjectURL(blob));
+        }
+      };
       window.addEventListener('unhandledrejection', function(e) {
         if (e.reason == null || !(e.reason instanceof Error)) {
           e.preventDefault();
@@ -21,6 +25,9 @@
         }
       }, true);
     </script>
+  </head>
+  <body>
+    <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>
