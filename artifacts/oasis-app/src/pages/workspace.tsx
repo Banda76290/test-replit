@@ -19,6 +19,35 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
+type ChatMessage = { id: string; role: "user" | "ia"; content: string; timestamp: Date };
+
+function genererReponseMockIA(msg: string, fileName?: string | null): string {
+  const m = msg.toLowerCase();
+  const f = fileName ?? "ce fichier";
+  if (m.includes("refactor") || m.includes("réfactor") || m.includes("réorganis")) {
+    return `J'ai analysé \`${f}\`. Voici ce que je propose :\n\n**Refactoring suggéré :**\n- Extraire la logique métier dans un service dédié\n- Remplacer les variables temporaires par des constantes nommées\n- Décomposer les fonctions de plus de 30 lignes\n\nVoulez-vous que je génère le diff correspondant ?`;
+  }
+  if (m.includes("bug") || m.includes("erreur") || m.includes("problème") || m.includes("corrig")) {
+    return `J'ai détecté un problème potentiel dans \`${f}\` :\n\n\`\`\`\n// Ligne ~42 : risque de null pointer\nconst value = data.items[0].price;\n// → À remplacer par :\nconst value = data?.items?.[0]?.price ?? 0;\n\`\`\`\n\nSouhaitez-vous que j'applique la correction ?`;
+  }
+  if (m.includes("explique") || m.includes("que fait") || m.includes("comprend") || m.includes("décris")) {
+    return `**Analyse de \`${f}\` :**\n\nCe fichier gère la couche de présentation pour le module concerné. Il :\n\n1. Initialise les dépendances en haut du bloc\n2. Définit les handlers d'événements\n3. Expose une interface publique via les exports\n\nLa logique principale est concentrée dans le bloc central. Y a-t-il une section spécifique que vous voulez approfondir ?`;
+  }
+  if (m.includes("ajoute") || m.includes("génère") || m.includes("crée") || m.includes("implément")) {
+    return `Je vais générer le code pour votre demande dans \`${f}\`.\n\n\`\`\`php\n// Nouveau bloc généré\nfunction handleNewFeature(array $params): array {\n    $validated = $this->validate($params);\n    if (!$validated) return ['error' => 'Paramètres invalides'];\n    return $this->service->process($validated);\n}\n\`\`\`\n\nCe code respecte les conventions du fichier. Confirmez-vous l'intégration ?`;
+  }
+  if (m.includes("optimis") || m.includes("performance") || m.includes("rapide") || m.includes("lent")) {
+    return `**Audit de performance — \`${f}\` :**\n\n⚠️ Requête N+1 détectée dans la boucle principale\n⚠️ Cache non exploité pour les appels répétés\n✅ Indexation correcte des clés primaires\n\n**Gain estimé :** ~60% de réduction des temps de réponse en appliquant eager loading.\n\nJe peux générer le diff de correction si vous le souhaitez.`;
+  }
+  if (m.includes("test") || m.includes("spec") || m.includes("unitaire")) {
+    return `Voici des tests unitaires pour \`${f}\` :\n\n\`\`\`php\npublic function testHandleValidInput(): void {\n    $result = $this->handler->process(['id' => 1]);\n    $this->assertEquals('success', $result['status']);\n}\n\npublic function testHandleInvalidInput(): void {\n    $result = $this->handler->process([]);\n    $this->assertArrayHasKey('error', $result);\n}\n\`\`\`\n\nCouverture estimée : 78%. Voulez-vous couvrir les cas limites supplémentaires ?`;
+  }
+  if (m.includes("document") || m.includes("comment") || m.includes("phpdoc") || m.includes("jsdoc")) {
+    return `J'ai généré la documentation pour \`${f}\` :\n\n\`\`\`php\n/**\n * Traite la requête entrante et retourne le résultat formaté.\n *\n * @param array $params Paramètres validés\n * @return array Résultat avec status et data\n * @throws InvalidArgumentException si $params est vide\n */\n\`\`\`\n\nSouhaitez-vous que j'insère les blocs PHPDoc dans l'ensemble du fichier ?`;
+  }
+  return `J'analyse votre demande sur \`${f}\`.\n\nPourriez-vous préciser l'action souhaitée ? Par exemple :\n- **Refactoriser** une section spécifique\n- **Expliquer** le fonctionnement d'un bloc\n- **Corriger** un bug identifié\n- **Ajouter** une fonctionnalité\n- **Optimiser** les performances\n- **Générer des tests** unitaires`;
+}
+
 const TASK_TYPES = [
   { id: "analyze-need", label: "Analyser un besoin" },
   { id: "propose-implementation", label: "Proposer une implémentation" },
@@ -1632,6 +1661,14 @@ export default function WorkspacePage() {
   const [docCodeGenDone, setDocCodeGenDone] = useState(false);
   const [docRapportTab, setDocRapportTab] = useState<"fonctionnelle">("fonctionnelle");
   const [diffInitTabIds, setDiffInitTabIds] = useState<Set<string>>(new Set());
+
+  const [chatOpen, setChatOpen] = useState(false);
+  const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
+  const [chatInput, setChatInput] = useState("");
+  const [chatLoading, setChatLoading] = useState(false);
+  const chatEndRef = useRef<HTMLDivElement>(null);
+  const chatInputRef = useRef<HTMLTextAreaElement>(null);
+
   const [openTabs, setOpenTabs] = useState<FileNode[]>([]);
   const [activeFileId, setActiveFileId] = useState<string | null>(null);
   const [editedContents, setEditedContents] = useState<Record<string, string>>({});
@@ -1837,6 +1874,24 @@ export default function WorkspacePage() {
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [docAnalyseOpen]);
+
+  useEffect(() => {
+    chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [chatMessages, chatLoading]);
+
+  const handleChatSend = async () => {
+    const text = chatInput.trim();
+    if (!text || chatLoading) return;
+    setChatInput("");
+    const userMsg: ChatMessage = { id: crypto.randomUUID(), role: "user", content: text, timestamp: new Date() };
+    setChatMessages(prev => [...prev, userMsg]);
+    setChatLoading(true);
+    await new Promise(r => setTimeout(r, 900 + Math.random() * 800));
+    const reply = genererReponseMockIA(text, activeFile?.name ?? null);
+    const iaMsg: ChatMessage = { id: crypto.randomUUID(), role: "ia", content: reply, timestamp: new Date() };
+    setChatMessages(prev => [...prev, iaMsg]);
+    setChatLoading(false);
+  };
 
   const handleSearch = useCallback(() => {
     if (urlInput.trim()) {
@@ -2324,62 +2379,195 @@ export default function WorkspacePage() {
                 </div>
               </div>
 
-              {/* Tab bar + editor */}
+              {/* Tab bar + editor + AI chat */}
               {openTabs.length > 0 && (
                 <div className={cn(
-                  "flex flex-col overflow-hidden rounded-xl border border-border/30 shadow-sm",
+                  "flex flex-row overflow-hidden rounded-xl border border-border/30 shadow-sm",
                   isEditorFullscreen
                     ? "fixed inset-0 z-50 rounded-none border-0 shadow-2xl"
                     : "flex-1 h-full min-w-0"
                 )}>
-                  {/* Tabs */}
-                  <div className="flex items-stretch bg-[#181825] border-b border-white/10 overflow-x-auto shrink-0 scrollbar-none">
-                    {openTabs.map(tab => {
-                      const isActive = tab.id === activeFileId;
-                      const isModified = editedContents[tab.id] !== undefined && editedContents[tab.id] !== getMockCode(tab.name);
-                      return (
-                        <button key={tab.id} onClick={() => setActiveFileId(tab.id)}
-                          className={cn(
-                            "flex items-center gap-2 px-3 py-2 text-xs font-mono whitespace-nowrap border-r border-white/10 group transition-colors min-w-0 max-w-[200px]",
-                            isActive
-                              ? "bg-[#1e1e2e] text-white/90 border-t-2 border-t-primary"
-                              : "text-white/40 hover:text-white/70 hover:bg-white/5"
-                          )}>
-                          <File className={cn("w-3 h-3 shrink-0", getFileIconColor(tab))} strokeWidth={1.5} />
-                          <span className="truncate">{tab.name}</span>
-                          {isModified && <span className="text-amber-400 shrink-0">●</span>}
-                          <span
-                            onClick={e => handleCloseTab(tab.id, e)}
+                  {/* Editor column (tabs + Monaco) */}
+                  <div className="flex flex-col flex-1 min-w-0 overflow-hidden">
+                    {/* Tabs */}
+                    <div className="flex items-stretch bg-[#181825] border-b border-white/10 overflow-x-auto shrink-0 scrollbar-none">
+                      {openTabs.map(tab => {
+                        const isActive = tab.id === activeFileId;
+                        const isModified = editedContents[tab.id] !== undefined && editedContents[tab.id] !== getMockCode(tab.name);
+                        return (
+                          <button key={tab.id} onClick={() => setActiveFileId(tab.id)}
                             className={cn(
-                              "shrink-0 w-4 h-4 flex items-center justify-center rounded hover:bg-white/20 transition-colors",
-                              isActive ? "opacity-60 hover:opacity-100" : "opacity-0 group-hover:opacity-60 hover:!opacity-100"
+                              "flex items-center gap-2 px-3 py-2 text-xs font-mono whitespace-nowrap border-r border-white/10 group transition-colors min-w-0 max-w-[200px]",
+                              isActive
+                                ? "bg-[#1e1e2e] text-white/90 border-t-2 border-t-primary"
+                                : "text-white/40 hover:text-white/70 hover:bg-white/5"
                             )}>
-                            <X className="w-2.5 h-2.5" />
-                          </span>
-                        </button>
-                      );
-                    })}
+                            <File className={cn("w-3 h-3 shrink-0", getFileIconColor(tab))} strokeWidth={1.5} />
+                            <span className="truncate">{tab.name}</span>
+                            {isModified && <span className="text-amber-400 shrink-0">●</span>}
+                            <span
+                              onClick={e => handleCloseTab(tab.id, e)}
+                              className={cn(
+                                "shrink-0 w-4 h-4 flex items-center justify-center rounded hover:bg-white/20 transition-colors",
+                                isActive ? "opacity-60 hover:opacity-100" : "opacity-0 group-hover:opacity-60 hover:!opacity-100"
+                              )}>
+                              <X className="w-2.5 h-2.5" />
+                            </span>
+                          </button>
+                        );
+                      })}
+                    </div>
+
+                    {/* Active editor */}
+                    {activeFile && (
+                      <div className="flex-1 min-h-0">
+                        <CodeViewer
+                          key={activeFile.id}
+                          file={activeFile}
+                          onClose={() => { handleCloseTab(activeFile.id); setIsEditorFullscreen(false); }}
+                          editContent={editedContents[activeFile.id] ?? getMockCode(activeFile.name)}
+                          onEditChange={v => setEditedContents(prev => ({ ...prev, [activeFile.id]: v }))}
+                          scrollToLine={scrollToLine}
+                          onScrollToLineDone={() => setScrollToLine(null)}
+                          isFullscreen={isEditorFullscreen}
+                          onToggleFullscreen={() => setIsEditorFullscreen(f => !f)}
+                          prodUrl={prestation?.productionUrl ?? allPrestationUrls.find(e => e.url === selectedUrl && e.type === "prod")?.url ?? (selectedUrl ?? null)}
+                          saveUrl={prestation?.saveUrls?.[0] ?? allPrestationUrls.find(e => e.name === allPrestationUrls.find(e2 => e2.url === selectedUrl)?.name && e.type === "save")?.url ?? null}
+                          initialTab={diffInitTabIds.has(activeFile.id) ? "diff" : undefined}
+                        />
+                      </div>
+                    )}
                   </div>
 
-                  {/* Active editor */}
-                  {activeFile && (
-                    <div className="flex-1 min-h-0">
-                      <CodeViewer
-                        key={activeFile.id}
-                        file={activeFile}
-                        onClose={() => { handleCloseTab(activeFile.id); setIsEditorFullscreen(false); }}
-                        editContent={editedContents[activeFile.id] ?? getMockCode(activeFile.name)}
-                        onEditChange={v => setEditedContents(prev => ({ ...prev, [activeFile.id]: v }))}
-                        scrollToLine={scrollToLine}
-                        onScrollToLineDone={() => setScrollToLine(null)}
-                        isFullscreen={isEditorFullscreen}
-                        onToggleFullscreen={() => setIsEditorFullscreen(f => !f)}
-                        prodUrl={prestation?.productionUrl ?? allPrestationUrls.find(e => e.url === selectedUrl && e.type === "prod")?.url ?? (selectedUrl ?? null)}
-                        saveUrl={prestation?.saveUrls?.[0] ?? allPrestationUrls.find(e => e.name === allPrestationUrls.find(e2 => e2.url === selectedUrl)?.name && e.type === "save")?.url ?? null}
-                        initialTab={diffInitTabIds.has(activeFile.id) ? "diff" : undefined}
-                      />
-                    </div>
-                  )}
+                  {/* AI Chat panel */}
+                  <div className={cn(
+                    "flex flex-col border-l border-white/10 bg-[#181825] transition-all duration-200 shrink-0 overflow-hidden",
+                    chatOpen ? "w-[320px]" : "w-10"
+                  )}>
+                    {chatOpen ? (
+                      <>
+                        {/* Chat header */}
+                        <div className="flex items-center justify-between px-3 py-2 border-b border-white/10 shrink-0">
+                          <div className="flex items-center gap-2">
+                            <div className="w-6 h-6 rounded-md bg-primary/20 flex items-center justify-center">
+                              <Sparkles className="w-3.5 h-3.5 text-primary" />
+                            </div>
+                            <span className="text-xs font-semibold text-white/80">Assistant IA</span>
+                            {activeFile && (
+                              <span className="text-[10px] text-white/30 font-mono truncate max-w-[90px]">{activeFile.name}</span>
+                            )}
+                          </div>
+                          <div className="flex items-center gap-1">
+                            {chatMessages.length > 0 && (
+                              <button onClick={() => setChatMessages([])} title="Effacer la conversation"
+                                className="p-1 rounded hover:bg-white/10 text-white/30 hover:text-white/60 transition-colors">
+                                <RotateCcw className="w-3 h-3" />
+                              </button>
+                            )}
+                            <button onClick={() => setChatOpen(false)}
+                              className="p-1 rounded hover:bg-white/10 text-white/30 hover:text-white/60 transition-colors">
+                              <ChevronRight className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
+                        </div>
+
+                        {/* Messages */}
+                        <div className="flex-1 overflow-y-auto p-3 space-y-3 scrollbar-thin scrollbar-thumb-white/10">
+                          {chatMessages.length === 0 && !chatLoading && (
+                            <div className="flex flex-col items-center justify-center h-full gap-4 text-center px-2 py-8">
+                              <div className="w-10 h-10 rounded-xl bg-primary/15 flex items-center justify-center">
+                                <Sparkles className="w-5 h-5 text-primary" />
+                              </div>
+                              <div>
+                                <p className="text-xs font-semibold text-white/70 mb-1">Vibecoding IA</p>
+                                <p className="text-[11px] text-white/30 leading-relaxed">
+                                  Interagissez avec le code ouvert. Demandez une explication, un refactoring, la correction d'un bug, ou la génération de tests.
+                                </p>
+                              </div>
+                              <div className="flex flex-col gap-1.5 w-full">
+                                {["Explique ce fichier", "Refactorise ce code", "Corrige les bugs", "Génère les tests unitaires"].map(s => (
+                                  <button key={s} onClick={() => { setChatInput(s); chatInputRef.current?.focus(); }}
+                                    className="text-left text-[11px] px-2.5 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-white/50 hover:text-white/80 transition-colors border border-white/5">
+                                    {s}
+                                  </button>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+
+                          {chatMessages.map(msg => (
+                            <div key={msg.id} className={cn("flex gap-2", msg.role === "user" ? "flex-row-reverse" : "flex-row")}>
+                              {msg.role === "ia" && (
+                                <div className="w-5 h-5 rounded-md bg-primary/20 flex items-center justify-center shrink-0 mt-0.5">
+                                  <Sparkles className="w-3 h-3 text-primary" />
+                                </div>
+                              )}
+                              <div className={cn(
+                                "max-w-[85%] rounded-xl px-3 py-2 text-[11px] leading-relaxed whitespace-pre-wrap break-words",
+                                msg.role === "user"
+                                  ? "bg-primary text-white rounded-tr-sm"
+                                  : "bg-white/8 text-white/80 rounded-tl-sm border border-white/8"
+                              )}>
+                                {msg.content}
+                              </div>
+                            </div>
+                          ))}
+
+                          {chatLoading && (
+                            <div className="flex gap-2">
+                              <div className="w-5 h-5 rounded-md bg-primary/20 flex items-center justify-center shrink-0 mt-0.5">
+                                <Sparkles className="w-3 h-3 text-primary" />
+                              </div>
+                              <div className="bg-white/8 border border-white/8 rounded-xl rounded-tl-sm px-3 py-2.5 flex items-center gap-1.5">
+                                <span className="w-1.5 h-1.5 rounded-full bg-primary/60 animate-bounce" style={{ animationDelay: "0ms" }} />
+                                <span className="w-1.5 h-1.5 rounded-full bg-primary/60 animate-bounce" style={{ animationDelay: "150ms" }} />
+                                <span className="w-1.5 h-1.5 rounded-full bg-primary/60 animate-bounce" style={{ animationDelay: "300ms" }} />
+                              </div>
+                            </div>
+                          )}
+                          <div ref={chatEndRef} />
+                        </div>
+
+                        {/* Input */}
+                        <div className="shrink-0 border-t border-white/10 p-2">
+                          <div className="flex flex-col gap-1.5 bg-white/5 rounded-xl border border-white/10 px-2.5 pt-2 pb-1.5 focus-within:border-primary/40 transition-colors">
+                            <textarea
+                              ref={chatInputRef}
+                              value={chatInput}
+                              onChange={e => setChatInput(e.target.value)}
+                              onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleChatSend(); } }}
+                              placeholder="Demandez quelque chose sur le code…"
+                              rows={2}
+                              className="w-full bg-transparent text-[11px] text-white/80 placeholder:text-white/25 resize-none focus:outline-none leading-relaxed"
+                            />
+                            <div className="flex items-center justify-between">
+                              <span className="text-[10px] text-white/20">↵ Envoyer · ⇧↵ Nouvelle ligne</span>
+                              <button
+                                onClick={handleChatSend}
+                                disabled={!chatInput.trim() || chatLoading}
+                                className={cn(
+                                  "flex items-center gap-1 px-2 py-1 rounded-lg text-[11px] font-medium transition-all",
+                                  chatInput.trim() && !chatLoading
+                                    ? "bg-primary text-white hover:bg-primary/90"
+                                    : "bg-white/5 text-white/20 cursor-not-allowed"
+                                )}>
+                                <Zap className="w-3 h-3" />
+                                Envoyer
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      </>
+                    ) : (
+                      /* Collapsed toggle */
+                      <button onClick={() => setChatOpen(true)}
+                        className="flex flex-col items-center justify-center w-full h-full gap-2 text-white/30 hover:text-white/70 hover:bg-white/5 transition-colors group"
+                        title="Ouvrir l'assistant IA">
+                        <Sparkles className="w-4 h-4 group-hover:text-primary transition-colors" />
+                        <span className="text-[10px] font-medium tracking-widest" style={{ writingMode: "vertical-rl", transform: "rotate(180deg)" }}>IA</span>
+                      </button>
+                    )}
+                  </div>
                 </div>
               )}
             </div>
