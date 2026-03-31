@@ -20,19 +20,21 @@ self.MonacoEnvironment = {
 loader.config({ monaco });
 
 // ─── TypeScript / JavaScript global options ───────────────────────────────
-monaco.languages.typescript.typescriptDefaults.setCompilerOptions({
-  target: monaco.languages.typescript.ScriptTarget.ESNext,
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const monacoTs = (monaco.languages as any).typescript;
+monacoTs.typescriptDefaults.setCompilerOptions({
+  target: monacoTs.ScriptTarget.ESNext,
   allowNonTsExtensions: true,
-  moduleResolution: monaco.languages.typescript.ModuleResolutionKind.NodeJs,
-  module: monaco.languages.typescript.ModuleKind.CommonJS,
+  moduleResolution: monacoTs.ModuleResolutionKind.NodeJs,
+  module: monacoTs.ModuleKind.CommonJS,
   noEmit: true,
   esModuleInterop: true,
-  jsx: monaco.languages.typescript.JsxEmit.React,
+  jsx: monacoTs.JsxEmit.React,
   allowJs: true,
   typeRoots: ["node_modules/@types"],
 });
 
-monaco.languages.typescript.typescriptDefaults.setDiagnosticsOptions({
+monacoTs.typescriptDefaults.setDiagnosticsOptions({
   noSemanticValidation: false,
   noSyntaxValidation: false,
 });

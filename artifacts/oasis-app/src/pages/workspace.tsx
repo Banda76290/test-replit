@@ -705,7 +705,7 @@ const MONACO_EDIT_OPTIONS = {
   autoSurround: "languageDefined" as const,
   autoIndent: "full" as const,
   matchBrackets: "always" as const,
-  lightbulb: { enabled: "on" as const },
+  lightbulb: { enabled: "on" as never },
   codeLens: true,
   wordBasedSuggestions: "currentDocument" as const,
   contextmenu: true,
