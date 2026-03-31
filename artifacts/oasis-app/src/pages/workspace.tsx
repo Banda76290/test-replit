@@ -537,24 +537,21 @@ const MONACO_OPTIONS_BASE = {
   quickSuggestions: { other: true, comments: false, strings: false },
 };
 
-function SafeDiffEditor({ language, original, modified }: {
+function SafeDiffEditor({ language, original, modified, diffEditorRef }: {
   language: string;
   original: string;
   modified: string;
+  diffEditorRef: React.MutableRefObject<any>;
 }) {
   const containerRef = useRef<HTMLDivElement>(null);
-  const editorRef = useRef<any>(null);
   const originalModelRef = useRef<any>(null);
   const modifiedModelRef = useRef<any>(null);
 
   useEffect(() => {
-    const monaco = (window as any).MonacoEnvironment?._monacoInstance;
-    let monacoMod: typeof import("monaco-editor") | null = null;
     let disposed = false;
 
     import("monaco-editor").then((m) => {
       if (disposed || !containerRef.current) return;
-      monacoMod = m;
 
       const originalModel = m.editor.createModel(original, language);
       const modifiedModel = m.editor.createModel(modified, language);
@@ -569,21 +566,21 @@ function SafeDiffEditor({ language, original, modified }: {
         theme: "vs-dark",
       });
       editor.setModel({ original: originalModel, modified: modifiedModel });
-      editorRef.current = editor;
+      diffEditorRef.current = editor;
     });
 
     return () => {
       disposed = true;
       try {
-        const editor = editorRef.current;
+        const editor = diffEditorRef.current;
         if (editor) {
-          editor.setModel({ original: null, modified: null });
+          editor.setModel(null);
           editor.dispose();
         }
       } catch {}
       try { originalModelRef.current?.dispose(); } catch {}
       try { modifiedModelRef.current?.dispose(); } catch {}
-      editorRef.current = null;
+      diffEditorRef.current = null;
       originalModelRef.current = null;
       modifiedModelRef.current = null;
     };
@@ -610,6 +607,7 @@ function CodeViewer({ file, onClose, prodUrl, saveUrl, editContent, onEditChange
   const [lintProblems, setLintProblems] = useState<LintMarker[]>([]);
   const editorRef = useRef<any>(null);
   const monacoRef = useRef<any>(null);
+  const diffEditorRef = useRef<any>(null);
   const originalCode = useMemo(() => getMockCode(file.name), [file.name]);
   const saveCode = useMemo(() => getMockSaveCode(file.name), [file.name]);
   const language = useMemo(() => getMonacoLanguage(file.name), [file.name]);
@@ -638,10 +636,14 @@ function CodeViewer({ file, onClose, prodUrl, saveUrl, editContent, onEditChange
 
   useEffect(() => {
     const timeout = setTimeout(() => {
-      editorRef.current?.layout();
+      if (tab === "diff") {
+        diffEditorRef.current?.layout();
+      } else {
+        editorRef.current?.layout();
+      }
     }, 50);
     return () => clearTimeout(timeout);
-  }, [isFullscreen]);
+  }, [isFullscreen, tab]);
 
   const handleCopy = () => {
     const content = tab === "edit" ? editContent : originalCode;
@@ -774,6 +776,7 @@ function CodeViewer({ file, onClose, prodUrl, saveUrl, editContent, onEditChange
             language={language}
             original={originalCode}
             modified={saveCode}
+            diffEditorRef={diffEditorRef}
           />
         )}
       </div>
