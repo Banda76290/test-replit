@@ -9,41 +9,26 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <script>
-      /* ── Monaco CDN worker fix ──────────────────────────────────────────────
-         Monaco (loaded from CDN via @monaco-editor/react) spawns web workers
-         with CDN URLs. In Replit's sandbox those workers fail to load, which
-         emits a non-Error unhandledrejection that Replit's CDP monitor treats
-         as a fatal crash and shows the artifact error screen.
-
-         Fix: intercept new Worker() before ANY script runs.
-           • CDN / external URLs → replaced with a silent no-op blob worker
-           • blob: URLs (our own inline workers) → passed through unchanged
-         This prevents the failing fetch entirely, so no rejection is ever raised.
-         MonacoEnvironment.getWorker is also set as a belt-and-suspenders guard.
-      ──────────────────────────────────────────────────────────────────────── */
       (function () {
         var _Worker = window.Worker;
+        var workerCode = [
+          'self.onmessage=function(e){',
+          '  var d=e.data;',
+          '  if(d&&d.type==="init"){self.postMessage({type:"initialized"});return;}',
+          '  if(d&&typeof d.$id!=="undefined"){',
+          '    self.postMessage({$id:d.$id,$error:{name:"Error",message:"Worker unavailable",stack:""}});',
+          '  }',
+          '};'
+        ].join('');
 
-        function isCdnUrl(u) {
-          if (!u) return false;
-          var s = (u instanceof URL ? u.href : String(u));
-          return s.indexOf('blob:') !== 0;
+        function stubWorker(opts) {
+          var blob = new Blob([workerCode], { type: 'application/javascript' });
+          return new _Worker(URL.createObjectURL(blob), opts);
         }
 
-        function noopWorker(options) {
-          var blob = new Blob(['self.onmessage=function(){}'], { type: 'application/javascript' });
-          return new _Worker(URL.createObjectURL(blob), options);
-        }
-
-        window.Worker = function (url, options) {
-          if (isCdnUrl(url)) return noopWorker(options);
-          return new _Worker(url, options);
-        };
+        window.Worker = function () { return stubWorker(arguments[1]); };
         window.Worker.prototype = _Worker.prototype;
-
-        self.MonacoEnvironment = {
-          getWorker: function () { return noopWorker(); }
-        };
+        self.MonacoEnvironment = { getWorker: function () { return stubWorker(); } };
       })();
     </script>
   </head>
