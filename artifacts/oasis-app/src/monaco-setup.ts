@@ -20,3 +20,25 @@ self.MonacoEnvironment = {
 };
 
 loader.config({ monaco });
+
+window.addEventListener("error", (e) => {
+  if (
+    e.message?.includes("TextModel got disposed") ||
+    e.message?.includes("DiffEditorWidget")
+  ) {
+    e.preventDefault();
+    e.stopImmediatePropagation();
+  }
+});
+
+window.addEventListener("unhandledrejection", (e) => {
+  const msg =
+    e.reason?.message ?? (typeof e.reason === "string" ? e.reason : "");
+  if (
+    msg.includes("TextModel got disposed") ||
+    msg.includes("DiffEditorWidget")
+  ) {
+    e.preventDefault();
+    e.stopImmediatePropagation();
+  }
+});

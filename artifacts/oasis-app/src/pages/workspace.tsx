@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from "react";
-import MonacoEditor, { DiffEditor as MonacoDiffEditor } from "@monaco-editor/react";
+import MonacoEditor from "@monaco-editor/react";
 import { AppLayout } from "@/components/layout";
 import { Button } from "@/components/ui/button";
 import { useGetPrestation, useRunAnalysis, useSubmitFeedback, type AnalysisResult } from "@workspace/api-client-react";
@@ -537,6 +537,61 @@ const MONACO_OPTIONS_BASE = {
   quickSuggestions: { other: true, comments: false, strings: false },
 };
 
+function SafeDiffEditor({ language, original, modified }: {
+  language: string;
+  original: string;
+  modified: string;
+}) {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const editorRef = useRef<any>(null);
+  const originalModelRef = useRef<any>(null);
+  const modifiedModelRef = useRef<any>(null);
+
+  useEffect(() => {
+    const monaco = (window as any).MonacoEnvironment?._monacoInstance;
+    let monacoMod: typeof import("monaco-editor") | null = null;
+    let disposed = false;
+
+    import("monaco-editor").then((m) => {
+      if (disposed || !containerRef.current) return;
+      monacoMod = m;
+
+      const originalModel = m.editor.createModel(original, language);
+      const modifiedModel = m.editor.createModel(modified, language);
+      originalModelRef.current = originalModel;
+      modifiedModelRef.current = modifiedModel;
+
+      const editor = m.editor.createDiffEditor(containerRef.current!, {
+        ...MONACO_OPTIONS_BASE,
+        readOnly: true,
+        renderSideBySide: true,
+        enableSplitViewResizing: true,
+        theme: "vs-dark",
+      });
+      editor.setModel({ original: originalModel, modified: modifiedModel });
+      editorRef.current = editor;
+    });
+
+    return () => {
+      disposed = true;
+      try {
+        const editor = editorRef.current;
+        if (editor) {
+          editor.setModel({ original: null, modified: null });
+          editor.dispose();
+        }
+      } catch {}
+      try { originalModelRef.current?.dispose(); } catch {}
+      try { modifiedModelRef.current?.dispose(); } catch {}
+      editorRef.current = null;
+      originalModelRef.current = null;
+      modifiedModelRef.current = null;
+    };
+  }, [language, original, modified]);
+
+  return <div ref={containerRef} style={{ width: "100%", height: "100%" }} />;
+}
+
 function CodeViewer({ file, onClose, prodUrl, saveUrl, editContent, onEditChange, scrollToLine, onScrollToLineDone, isFullscreen, onToggleFullscreen }: {
   file: FileNode;
   onClose: () => void;
@@ -715,18 +770,10 @@ function CodeViewer({ file, onClose, prodUrl, saveUrl, editContent, onEditChange
           />
         )}
         {tab === "diff" && (
-          <MonacoDiffEditor
-            height="100%"
+          <SafeDiffEditor
             language={language}
             original={originalCode}
             modified={saveCode}
-            theme="vs-dark"
-            options={{
-              ...MONACO_OPTIONS_BASE,
-              readOnly: true,
-              renderSideBySide: true,
-              enableSplitViewResizing: true,
-            }}
           />
         )}
       </div>
