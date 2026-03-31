@@ -2,7 +2,7 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { AppLayout } from "@/components/layout";
 import { Button } from "@/components/ui/button";
 import { useGetPrestation, useRunAnalysis, useSubmitFeedback, type AnalysisResult } from "@workspace/api-client-react";
-import { useRoute, useLocation, Link } from "wouter";
+import { useRoute, Link } from "wouter";
 import {
   Cpu, FileText, Sparkles, AlertTriangle, CheckCircle2,
   Server, ThumbsUp, ThumbsDown, Loader2, ArrowLeft,
@@ -264,13 +264,9 @@ function TreeView({ nodes, expandedIds, toggle, depth }: { nodes: FileNode[]; ex
 export default function WorkspacePage() {
   const [, params] = useRoute("/workspace/:prestationId");
   const prestationId = params?.prestationId || "";
-  const [, navigate] = useLocation();
 
-  useEffect(() => {
-    if (!prestationId) navigate("/projets");
-  }, [prestationId, navigate]);
 
-  const { data: prestation } = useGetPrestation(prestationId);
+  const { data: prestation } = useGetPrestation(prestationId, { query: { enabled: !!prestationId } });
   const runAnalysis = useRunAnalysis();
 
   const [taskType, setTaskType] = useState(TASK_TYPES[0].id);

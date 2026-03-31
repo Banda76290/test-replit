@@ -7,9 +7,6 @@ import { ThemeProvider } from "@/hooks/use-theme";
 import { ServiceProvider } from "@/hooks/use-service";
 import { ProtectedRoute } from "@/components/protected-route";
 
-import { useEffect } from "react";
-import { useLocation } from "wouter";
-
 import NotFound from "@/pages/not-found";
 import LoginPage from "@/pages/login";
 import DashboardPage from "@/pages/dashboard";
@@ -24,11 +21,6 @@ import ServicePlaceholderPage from "@/pages/service-placeholder";
 
 const queryClient = new QueryClient();
 
-function WorkspaceRedirect() {
-  const [, navigate] = useLocation();
-  useEffect(() => { navigate("/clients"); }, [navigate]);
-  return null;
-}
 
 function Router() {
   return (
@@ -50,7 +42,7 @@ function Router() {
         <ProtectedRoute><ProjectPrestationsPage /></ProtectedRoute>
       </Route>
       <Route path="/workspace">
-        <ProtectedRoute><WorkspaceRedirect /></ProtectedRoute>
+        <ProtectedRoute><WorkspacePage /></ProtectedRoute>
       </Route>
       <Route path="/workspace/:prestationId">
         <ProtectedRoute><WorkspacePage /></ProtectedRoute>
