@@ -272,9 +272,81 @@ const PHP_SNIPPETS: Array<{ label: string; insert: string; doc: string }> = [
   },
 ];
 
+// ── Provider 1 : variables PHP ($variable) ───────────────────────────────
+// Monaco ne traite pas '$' comme un caractère de mot, donc on gère
+// séparément le cas où l'utilisateur tape '$xxx'.
 monaco.languages.registerCompletionItemProvider("php", {
-  triggerCharacters: ["$", "->", "::", "(", " ", "\t"],
+  triggerCharacters: ["$"],
   provideCompletionItems(model, position) {
+    // Texte de la ligne jusqu'au curseur
+    const linePrefix = model.getValueInRange({
+      startLineNumber: position.lineNumber,
+      startColumn: 1,
+      endLineNumber: position.lineNumber,
+      endColumn: position.column,
+    });
+
+    // On n'active ce provider que si le curseur est après un '$'
+    const varMatch = linePrefix.match(/\$([a-zA-Z_]\w*)$/);
+    const afterDollarOnly = linePrefix.match(/\$$/);
+    if (!varMatch && !afterDollarOnly) return { suggestions: [] };
+
+    const typed = varMatch ? varMatch[1] : "";
+    const dollarCol = position.column - typed.length - 1; // colonne du '$'
+
+    // Extraire toutes les variables du document
+    const fullText = model.getValue();
+    const varRegex = /\$([a-zA-Z_]\w*)/g;
+    const vars = new Map<string, number>(); // name → occurrences
+    let m: RegExpExecArray | null;
+    while ((m = varRegex.exec(fullText)) !== null) {
+      const v = m[1];
+      vars.set(v, (vars.get(v) ?? 0) + 1);
+    }
+
+    // Variables PHP superglobales toujours disponibles
+    const superglobals = [
+      "_GET", "_POST", "_REQUEST", "_SESSION", "_COOKIE",
+      "_SERVER", "_ENV", "_FILES", "_GLOBALS", "this",
+    ];
+    superglobals.forEach((s) => vars.set(s, (vars.get(s) ?? 0) + 100));
+
+    const range = {
+      startLineNumber: position.lineNumber,
+      endLineNumber: position.lineNumber,
+      startColumn: dollarCol,
+      endColumn: position.column,
+    };
+
+    const suggestions = Array.from(vars.entries())
+      .sort((a, b) => b[1] - a[1]) // trier par fréquence d'usage
+      .map(([name, count]) => ({
+        label: "$" + name,
+        kind: monaco.languages.CompletionItemKind.Variable,
+        detail: superglobals.includes(name) ? "Superglobale PHP" : `Variable (×${count})`,
+        insertText: "$" + name,
+        filterText: "$" + name,
+        sortText: String(1000 - Math.min(count, 999)).padStart(4, "0") + name,
+        range,
+      }));
+
+    return { suggestions };
+  },
+});
+
+// ── Provider 2 : fonctions, mots-clés, snippets PHP ─────────────────────
+monaco.languages.registerCompletionItemProvider("php", {
+  triggerCharacters: ["->", "::", "("],
+  provideCompletionItems(model, position) {
+    // Si le curseur est après un '$', laisser le provider 1 gérer
+    const linePrefix = model.getValueInRange({
+      startLineNumber: position.lineNumber,
+      startColumn: 1,
+      endLineNumber: position.lineNumber,
+      endColumn: position.column,
+    });
+    if (/\$[a-zA-Z_\w]*$/.test(linePrefix)) return { suggestions: [] };
+
     const word = model.getWordUntilPosition(position);
     const range = {
       startLineNumber: position.lineNumber,
