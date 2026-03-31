@@ -693,7 +693,7 @@ function SafeDiffEditor({ language, original, modified, diffEditorRef }: {
   return <div ref={containerRef} style={{ width: "100%", height: "100%" }} />;
 }
 
-function CodeViewer({ file, onClose, prodUrl, saveUrl, editContent, onEditChange, scrollToLine, onScrollToLineDone, isFullscreen, onToggleFullscreen }: {
+function CodeViewer({ file, onClose, prodUrl, saveUrl, editContent, onEditChange, scrollToLine, onScrollToLineDone, isFullscreen, onToggleFullscreen, initialTab }: {
   file: FileNode;
   onClose: () => void;
   prodUrl?: string | null;
@@ -704,8 +704,9 @@ function CodeViewer({ file, onClose, prodUrl, saveUrl, editContent, onEditChange
   onScrollToLineDone?: () => void;
   isFullscreen?: boolean;
   onToggleFullscreen?: () => void;
+  initialTab?: "code" | "diff" | "edit";
 }) {
-  const [tab, setTab] = useState<"code" | "diff" | "edit">("code");
+  const [tab, setTab] = useState<"code" | "diff" | "edit">(initialTab ?? "code");
   const [copied, setCopied] = useState(false);
   const [savedAt, setSavedAt] = useState<Date | null>(null);
   const [lintProblems, setLintProblems] = useState<LintMarker[]>([]);
@@ -1622,6 +1623,15 @@ export default function WorkspacePage() {
   const [tcSuggestions, setTcSuggestions] = useState<TacheCode[]>([]);
   const [uploadedFile, setUploadedFile] = useState<{ name: string; size: number; content: string } | null>(null);
   const [isDragOver, setIsDragOver] = useState(false);
+
+  const [docAnalyseOpen, setDocAnalyseOpen] = useState(false);
+  const [docAnalyseRunning, setDocAnalyseRunning] = useState(false);
+  const [docAnalyseStep, setDocAnalyseStep] = useState("");
+  const [docRapport, setDocRapport] = useState<AnalyseRapport | null>(null);
+  const [docCodeGenRunning, setDocCodeGenRunning] = useState(false);
+  const [docCodeGenDone, setDocCodeGenDone] = useState(false);
+  const [docRapportTab, setDocRapportTab] = useState<"fonctionnelle">("fonctionnelle");
+  const [diffInitTabIds, setDiffInitTabIds] = useState<Set<string>>(new Set());
   const [openTabs, setOpenTabs] = useState<FileNode[]>([]);
   const [activeFileId, setActiveFileId] = useState<string | null>(null);
   const [editedContents, setEditedContents] = useState<Record<string, string>>({});
@@ -1740,6 +1750,11 @@ export default function WorkspacePage() {
     setSearchMode(false);
     setSearchQuery("");
     setScrollToLine(null);
+    setDocOpen(false);
+    setDocRapport(null);
+    setDocCodeGenDone(false);
+    setDocCodeGenRunning(false);
+    setDocAnalyseOpen(true);
   };
 
   const handleTcSearch = () => {
@@ -1757,6 +1772,11 @@ export default function WorkspacePage() {
     const reader = new FileReader();
     reader.onload = (e) => {
       setUploadedFile({ name: file.name, size: file.size, content: e.target?.result as string });
+      setDocOpen(false);
+      setDocRapport(null);
+      setDocCodeGenDone(false);
+      setDocCodeGenRunning(false);
+      setDocAnalyseOpen(true);
     };
     reader.readAsText(file, "utf-8");
   };
@@ -1774,6 +1794,43 @@ export default function WorkspacePage() {
   };
 
   const docHasContent = tcResult !== null || uploadedFile !== null;
+
+  const handleLancerDocAnalyse = async () => {
+    setDocAnalyseRunning(true);
+    const docName = tcResult?.code ?? uploadedFile?.name ?? "document";
+    const steps = [
+      `Analyse du document — ${docName}…`,
+      "Interrogation Freshdesk — service client…",
+      "Analyse Pipedrive — données commerciales…",
+      "Consultation Trackobug — tickets TK…",
+      "Lecture Timelines PRE & TC — outil interne…",
+      "Synthèse des interactions et impacts…",
+    ];
+    for (const step of steps) {
+      setDocAnalyseStep(step);
+      await new Promise(r => setTimeout(r, 540));
+    }
+    const rapport = genererRapportMock(tcResult?.titre ?? uploadedFile?.name ?? "document.txt", uploadedFile?.content ?? tcResult?.titre ?? "");
+    setDocRapport(rapport);
+    setDocAnalyseRunning(false);
+    setDocAnalyseStep("");
+    setDocRapportTab("fonctionnelle");
+  };
+
+  const handleGenererCode = async () => {
+    setDocCodeGenRunning(true);
+    await new Promise(r => setTimeout(r, 2800));
+    const tree = fileTree ?? getTreeForUrl("https://www.boutique-example.fr");
+    const allFiles = flattenTree(tree).filter(f => f.type === "file" && f.ext && ["php", "js", "ts", "html", "css"].includes(f.ext));
+    const picks = allFiles.slice(0, Math.min(4, allFiles.length));
+    const newDiffIds = new Set(picks.map(f => f.id));
+    setDiffInitTabIds(newDiffIds);
+    setOpenTabs(picks);
+    setActiveFileId(picks[0]?.id ?? null);
+    setDocCodeGenRunning(false);
+    setDocCodeGenDone(true);
+    setDocAnalyseOpen(false);
+  };
 
   const handleSearch = useCallback(() => {
     if (urlInput.trim()) {
@@ -2313,6 +2370,7 @@ export default function WorkspacePage() {
                         onToggleFullscreen={() => setIsEditorFullscreen(f => !f)}
                         prodUrl={prestation?.productionUrl ?? allPrestationUrls.find(e => e.url === selectedUrl && e.type === "prod")?.url ?? (selectedUrl ?? null)}
                         saveUrl={prestation?.saveUrls?.[0] ?? allPrestationUrls.find(e => e.name === allPrestationUrls.find(e2 => e2.url === selectedUrl)?.name && e.type === "save")?.url ?? null}
+                        initialTab={diffInitTabIds.has(activeFile.id) ? "diff" : undefined}
                       />
                     </div>
                   )}
@@ -2332,6 +2390,249 @@ export default function WorkspacePage() {
           )}
         </div>
       </div>
+
+      {/* Modal analyse documentaire */}
+      {docAnalyseOpen && (
+        <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+          <div className="bg-card border border-border rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col overflow-hidden">
+
+            {docAnalyseRunning ? (
+              /* Chargement analyse */
+              <div className="flex-1 flex flex-col items-center justify-center gap-6 p-10">
+                <div className="relative w-16 h-16">
+                  <div className="absolute inset-0 rounded-full border-4 border-primary/20" />
+                  <div className="absolute inset-0 rounded-full border-4 border-t-primary border-r-transparent border-b-transparent border-l-transparent animate-spin" />
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <FileText className="w-6 h-6 text-primary" />
+                  </div>
+                </div>
+                <div className="text-center space-y-1">
+                  <p className="text-sm font-semibold text-foreground">Analyse du document en cours…</p>
+                  <p className="text-xs text-muted-foreground animate-pulse">{docAnalyseStep}</p>
+                </div>
+                <div className="flex flex-col gap-1.5 w-full max-w-xs">
+                  {[
+                    { label: tcResult ? tcResult.code : (uploadedFile?.name ?? "Document"), icon: tcResult ? Hash : FileUp },
+                    { label: "Freshdesk", icon: MessageSquare },
+                    { label: "Pipedrive", icon: Briefcase },
+                    { label: "Trackobug", icon: Bug },
+                    { label: "Timelines PRE/TC", icon: CalendarDays },
+                    { label: "Synthèse des impacts", icon: TrendingUp },
+                  ].map((s, i) => {
+                    const stepMap = ["Analyse du document", "Interrogation Freshdesk", "Analyse Pipedrive", "Consultation Trackobug", "Lecture Timelines", "Synthèse"];
+                    const isDone = stepMap.slice(i + 1).some(x => docAnalyseStep.startsWith(x));
+                    const isActive = docAnalyseStep.startsWith(stepMap[i]);
+                    return (
+                      <div key={s.label} className={cn("flex items-center gap-2.5 px-3 py-1.5 rounded-lg text-xs transition-all", isActive ? "bg-primary/10 text-primary" : isDone ? "text-emerald-600 dark:text-emerald-400" : "text-muted-foreground")}>
+                        {isDone ? <Check className="w-3.5 h-3.5 shrink-0" /> : isActive ? <Loader2 className="w-3.5 h-3.5 shrink-0 animate-spin" /> : <s.icon className="w-3.5 h-3.5 shrink-0 opacity-40" />}
+                        {s.label}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            ) : docCodeGenRunning ? (
+              /* Génération code en cours */
+              <div className="flex-1 flex flex-col items-center justify-center gap-6 p-10">
+                <div className="relative w-16 h-16">
+                  <div className="absolute inset-0 rounded-full border-4 border-violet-500/20" />
+                  <div className="absolute inset-0 rounded-full border-4 border-t-violet-500 border-r-transparent border-b-transparent border-l-transparent animate-spin" />
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <Code2 className="w-6 h-6 text-violet-500" />
+                  </div>
+                </div>
+                <div className="text-center space-y-2">
+                  <p className="text-sm font-semibold text-foreground">Génération du code en cours…</p>
+                  <p className="text-xs text-muted-foreground">Analyse des fichiers impactés et production des modifications…</p>
+                </div>
+                <div className="flex flex-col gap-1.5 w-full max-w-xs text-xs text-muted-foreground">
+                  <div className="flex items-center gap-2"><Loader2 className="w-3.5 h-3.5 animate-spin text-violet-500" />Identification des fichiers à modifier…</div>
+                  <div className="flex items-center gap-2 opacity-50"><Code2 className="w-3.5 h-3.5" />Génération des modifications par fichier…</div>
+                  <div className="flex items-center gap-2 opacity-30"><GitBranch className="w-3.5 h-3.5" />Préparation du diff pour revue…</div>
+                </div>
+              </div>
+            ) : docRapport ? (
+              /* Rapport + génération */
+              <>
+                <div className="px-6 py-4 border-b border-border shrink-0">
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 mb-1">
+                        <FileText className="w-4 h-4 text-primary" />
+                        <span className="text-sm font-bold text-foreground">
+                          Rapport d'analyse — {tcResult ? tcResult.code : uploadedFile?.name}
+                        </span>
+                      </div>
+                      <p className="text-xs text-muted-foreground leading-relaxed">{docRapport.resume}</p>
+                    </div>
+                    <div className="shrink-0 flex flex-col items-center">
+                      <div className={cn("w-14 h-14 rounded-full flex items-center justify-center border-2 text-sm font-bold",
+                        docRapport.scoreImpact >= 70 ? "border-red-400 text-red-500 bg-red-50 dark:bg-red-950/20" : docRapport.scoreImpact >= 50 ? "border-amber-400 text-amber-600 bg-amber-50 dark:bg-amber-950/20" : "border-emerald-400 text-emerald-600 bg-emerald-50 dark:bg-emerald-950/20")}>
+                        {docRapport.scoreImpact}
+                      </div>
+                      <span className="text-[10px] text-muted-foreground mt-1">Score impact</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex-1 overflow-y-auto p-5 space-y-5">
+                  {/* Freshdesk */}
+                  <div>
+                    <div className="flex items-center gap-2 mb-2.5">
+                      <MessageSquare className="w-3.5 h-3.5 text-blue-500" />
+                      <span className="text-xs font-semibold text-foreground">Service client — Freshdesk</span>
+                      <span className="ml-auto text-[10px] text-muted-foreground">{docRapport.fonctionnelle.freshdeskTickets.length} ticket(s)</span>
+                    </div>
+                    <div className="space-y-1.5">
+                      {docRapport.fonctionnelle.freshdeskTickets.map(t => (
+                        <div key={t.id} className="flex items-start gap-2.5 p-2.5 bg-muted/30 rounded-lg border border-border/40">
+                          <span className="text-[10px] font-mono text-primary shrink-0 mt-0.5">{t.id}</span>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-xs font-medium text-foreground truncate">{t.titre}</p>
+                            <p className="text-[11px] text-muted-foreground mt-0.5">{t.impact}</p>
+                          </div>
+                          <span className={cn("text-[10px] border px-1.5 py-0.5 rounded-full font-medium shrink-0", t.statut === "Ouvert" ? "bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-950/20 dark:text-blue-400 dark:border-blue-800" : t.statut === "En attente" ? "bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/20 dark:text-amber-400 dark:border-amber-800" : "bg-muted text-muted-foreground border-border")}>{t.statut}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Pipedrive */}
+                  <div>
+                    <div className="flex items-center gap-2 mb-2.5">
+                      <Briefcase className="w-3.5 h-3.5 text-orange-500" />
+                      <span className="text-xs font-semibold text-foreground">Commercial — Pipedrive</span>
+                      <span className="ml-auto text-[10px] text-muted-foreground">{docRapport.fonctionnelle.pipedriveDeals.length} deal(s)</span>
+                    </div>
+                    <div className="space-y-1.5">
+                      {docRapport.fonctionnelle.pipedriveDeals.map(d => (
+                        <div key={d.id} className="flex items-start gap-2.5 p-2.5 bg-muted/30 rounded-lg border border-border/40">
+                          <span className="text-[10px] font-mono text-orange-500 shrink-0 mt-0.5">{d.id}</span>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-xs font-medium text-foreground truncate">{d.titre}</p>
+                            <p className="text-[11px] text-muted-foreground mt-0.5">{d.impact}</p>
+                          </div>
+                          <span className={cn("text-[10px] border px-1.5 py-0.5 rounded-full font-medium shrink-0", d.statut === "Actif" ? "bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/20 dark:text-emerald-400 dark:border-emerald-800" : "bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-950/20 dark:text-blue-400 dark:border-blue-800")}>{d.statut}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Trackobug */}
+                  <div>
+                    <div className="flex items-center gap-2 mb-2.5">
+                      <Bug className="w-3.5 h-3.5 text-red-500" />
+                      <span className="text-xs font-semibold text-foreground">Tickets — Trackobug</span>
+                      <span className="ml-auto text-[10px] text-muted-foreground">{docRapport.fonctionnelle.trackobugTK.length} TK</span>
+                    </div>
+                    <div className="space-y-1.5">
+                      {docRapport.fonctionnelle.trackobugTK.map(tk => (
+                        <div key={tk.id} className="flex items-start gap-2.5 p-2.5 bg-muted/30 rounded-lg border border-border/40">
+                          <span className="text-[10px] font-mono text-red-500 shrink-0 mt-0.5">{tk.id}</span>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-xs font-medium text-foreground truncate">{tk.titre}</p>
+                            <p className="text-[11px] text-muted-foreground mt-0.5">{tk.impact}</p>
+                          </div>
+                          <span className={cn("text-[10px] border px-1.5 py-0.5 rounded-full font-medium shrink-0", tk.type === "Bug" ? "bg-red-50 text-red-700 border-red-200 dark:bg-red-950/20 dark:text-red-400 dark:border-red-800" : "bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/20 dark:text-amber-400 dark:border-amber-800")}>{tk.type}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Timelines */}
+                  <div>
+                    <div className="flex items-center gap-2 mb-2.5">
+                      <CalendarDays className="w-3.5 h-3.5 text-violet-500" />
+                      <span className="text-xs font-semibold text-foreground">Timelines PRE & TC</span>
+                      <span className="ml-auto text-[10px] text-muted-foreground">{docRapport.fonctionnelle.timelines.length} jalons</span>
+                    </div>
+                    <div className="space-y-1.5">
+                      {docRapport.fonctionnelle.timelines.map(tl => (
+                        <div key={tl.ref} className="p-2.5 bg-muted/30 rounded-lg border border-border/40 space-y-1.5">
+                          <div className="flex items-center gap-2">
+                            <span className={cn("text-[10px] font-mono font-bold shrink-0", tl.type === "PRE" ? "text-violet-500" : "text-primary")}>{tl.ref}</span>
+                            <span className={cn("text-[10px] border px-1.5 py-0.5 rounded-full font-medium shrink-0", tl.type === "PRE" ? "bg-violet-50 text-violet-700 border-violet-200 dark:bg-violet-950/20 dark:text-violet-400 dark:border-violet-800" : "bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-950/20 dark:text-blue-400 dark:border-blue-800")}>{tl.type}</span>
+                            <span className="text-[11px] text-muted-foreground ml-auto shrink-0">Échéance : {tl.echeance}</span>
+                          </div>
+                          <p className="text-xs font-medium text-foreground truncate">{tl.titre}</p>
+                          <div className="flex items-center gap-2">
+                            <div className="flex-1 bg-muted rounded-full h-1.5">
+                              <div className={cn("h-1.5 rounded-full", tl.avancement >= 80 ? "bg-emerald-500" : tl.avancement >= 50 ? "bg-primary" : "bg-amber-500")} style={{ width: `${tl.avancement}%` }} />
+                            </div>
+                            <span className="text-[10px] text-muted-foreground shrink-0">{tl.avancement}%</span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Footer : génération de code */}
+                <div className="px-5 py-4 border-t border-border shrink-0 space-y-3">
+                  <div className="p-3 bg-violet-50 dark:bg-violet-950/20 border border-violet-200 dark:border-violet-800 rounded-xl flex items-start gap-3">
+                    <div className="w-8 h-8 rounded-lg bg-violet-500/20 flex items-center justify-center shrink-0 mt-0.5">
+                      <Zap className="w-4 h-4 text-violet-500" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xs font-semibold text-foreground">Génération automatique du code</p>
+                      <p className="text-[11px] text-muted-foreground mt-0.5 leading-relaxed">
+                        L'IA peut générer les modifications de code nécessaires pour ce document. Chaque fichier modifié s'ouvrira en mode <span className="font-medium text-foreground/70">Diff</span> pour revue avant validation.
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex items-center justify-between gap-2">
+                    <Button variant="outline" size="sm" onClick={() => setDocAnalyseOpen(false)}>
+                      <X className="w-3.5 h-3.5 mr-1.5" />Fermer
+                    </Button>
+                    <Button size="sm" onClick={handleGenererCode}
+                      className="bg-violet-600 hover:bg-violet-700 text-white">
+                      <Zap className="w-3.5 h-3.5 mr-1.5" />Générer le code automatiquement
+                    </Button>
+                  </div>
+                </div>
+              </>
+            ) : (
+              /* Prompt initial doc */
+              <>
+                <div className="px-6 pt-6 pb-4 shrink-0">
+                  <div className="flex items-start gap-4">
+                    <div className="w-10 h-10 rounded-xl bg-primary/15 flex items-center justify-center shrink-0">
+                      {tcResult ? <Hash className="w-5 h-5 text-primary" /> : <FileText className="w-5 h-5 text-primary" />}
+                    </div>
+                    <div>
+                      <h2 className="text-base font-bold text-foreground">Analyse du document de travail</h2>
+                      <p className="text-sm text-muted-foreground mt-0.5">
+                        {tcResult ? (
+                          <><span className="font-mono text-xs text-foreground/70 bg-muted px-1.5 py-0.5 rounded">{tcResult.code}</span> — {tcResult.titre}</>
+                        ) : (
+                          <><span className="font-mono text-xs text-foreground/70 bg-muted px-1.5 py-0.5 rounded">{uploadedFile?.name}</span> a été importé</>
+                        )}
+                      </p>
+                      <p className="text-sm text-muted-foreground mt-2">
+                        L'analyse va interroger les sources RAG (Freshdesk, Pipedrive, Trackobug, Timelines PRE/TC) pour évaluer les interactions et impacts métier.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+                <div className="px-6 pb-2 space-y-2 shrink-0">
+                  <div className="flex items-center gap-3 p-3 bg-muted/30 rounded-xl border border-border/40 text-xs text-muted-foreground">
+                    <MessageSquare className="w-4 h-4 text-blue-500 shrink-0" /><span>Service client — Freshdesk</span>
+                    <Briefcase className="w-4 h-4 text-orange-500 shrink-0 ml-3" /><span>Commercial — Pipedrive</span>
+                    <Bug className="w-4 h-4 text-red-500 shrink-0 ml-3" /><span>Trackobug</span>
+                    <CalendarDays className="w-4 h-4 text-violet-500 shrink-0 ml-3" /><span>Timelines PRE/TC</span>
+                  </div>
+                </div>
+                <div className="px-6 py-4 border-t border-border flex items-center justify-end gap-2 shrink-0">
+                  <Button variant="ghost" size="sm" onClick={() => setDocAnalyseOpen(false)}>Fermer</Button>
+                  <Button size="sm" onClick={handleLancerDocAnalyse}>
+                    <Sparkles className="w-3.5 h-3.5 mr-1.5" />Lancer l'analyse
+                  </Button>
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+      )}
     </AppLayout>
   );
 }
