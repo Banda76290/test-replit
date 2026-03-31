@@ -4,6 +4,10 @@ import { mockPrestations } from "../mocks/projects";
 
 const router: IRouter = Router();
 
+router.get("/projects", (_req, res) => {
+  res.json(mockProjets);
+});
+
 router.get("/projects/:id/prestations", (req, res) => {
   const prestations = mockPrestations.filter((p) => p.projectId === req.params.id);
   res.json(prestations);

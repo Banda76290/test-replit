@@ -55,8 +55,8 @@ export const SERVICES: Record<ServiceId, ServiceConfig> = {
     defaultHref: "/",
     nav: [
       { href: "/", label: "Tableau de bord", icon: LayoutDashboard },
-      { href: "/clients", label: "Clients", icon: Users },
-      { href: "/workspace", label: "Espace de travail", icon: FolderKanban, startsWith: true },
+      { href: "/projets", label: "Projets", icon: FolderKanban, startsWith: true },
+      { href: "/workspace", label: "Espace de travail", icon: Code2, startsWith: true },
       { href: "/history", label: "Historique", icon: History },
       { href: "/admin", label: "Admin & Profil", icon: Settings },
     ],

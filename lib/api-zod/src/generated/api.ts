@@ -179,6 +179,21 @@ export const GetClientProjectsResponse = zod.array(
 );
 
 /**
+ * @summary List all projects
+ */
+export const GetAllProjectsResponseItem = zod.object({
+  id: zod.string(),
+  clientId: zod.string(),
+  ref: zod.string(),
+  name: zod.string(),
+  description: zod.string().optional(),
+  status: zod.string(),
+  prestationCount: zod.number(),
+  lastUpdated: zod.string(),
+});
+export const GetAllProjectsResponse = zod.array(GetAllProjectsResponseItem);
+
+/**
  * @summary Get project details
  */
 export const GetProjectParams = zod.object({

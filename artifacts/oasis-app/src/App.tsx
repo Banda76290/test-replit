@@ -16,6 +16,7 @@ import DashboardPage from "@/pages/dashboard";
 import ClientsPage from "@/pages/clients";
 import ClientProjectsPage from "@/pages/client-projects";
 import ProjectPrestationsPage from "@/pages/project-prestations";
+import ProjetsPage from "@/pages/projets";
 import WorkspacePage from "@/pages/workspace";
 import HistoryPage from "@/pages/history";
 import AdminPage from "@/pages/admin";
@@ -38,6 +39,9 @@ function Router() {
       </Route>
       <Route path="/clients">
         <ProtectedRoute><ClientsPage /></ProtectedRoute>
+      </Route>
+      <Route path="/projets">
+        <ProtectedRoute><ProjetsPage /></ProtectedRoute>
       </Route>
       <Route path="/clients/:id/projects">
         <ProtectedRoute><ClientProjectsPage /></ProtectedRoute>

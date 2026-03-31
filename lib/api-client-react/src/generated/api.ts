@@ -527,6 +527,81 @@ export function useGetClientProjects<
 }
 
 /**
+ * @summary List all projects
+ */
+export const getGetAllProjectsUrl = () => {
+  return `/api/projects`;
+};
+
+export const getAllProjects = async (
+  options?: RequestInit,
+): Promise<Projet[]> => {
+  return customFetch<Projet[]>(getGetAllProjectsUrl(), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getGetAllProjectsQueryKey = () => {
+  return [`/api/projects`] as const;
+};
+
+export const getGetAllProjectsQueryOptions = <
+  TData = Awaited<ReturnType<typeof getAllProjects>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof getAllProjects>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getGetAllProjectsQueryKey();
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof getAllProjects>>> = ({
+    signal,
+  }) => getAllProjects({ signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof getAllProjects>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetAllProjectsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getAllProjects>>
+>;
+export type GetAllProjectsQueryError = ErrorType<unknown>;
+
+/**
+ * @summary List all projects
+ */
+
+export function useGetAllProjects<
+  TData = Awaited<ReturnType<typeof getAllProjects>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof getAllProjects>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetAllProjectsQueryOptions(options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
  * @summary Get project details
  */
 export const getGetProjectUrl = (id: string) => {

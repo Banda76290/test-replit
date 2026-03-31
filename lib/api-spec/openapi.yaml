@@ -141,6 +141,21 @@ paths:
                 items:
                   $ref: "#/components/schemas/Projet"
 
+  /projects:
+    get:
+      operationId: getAllProjects
+      tags: [projects]
+      summary: List all projects
+      responses:
+        "200":
+          description: All projects
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Projet"
+
   /projects/{id}:
     get:
       operationId: getProject
