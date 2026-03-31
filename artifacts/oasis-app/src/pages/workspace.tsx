@@ -15,11 +15,27 @@ import {
   Maximize2, Minimize2, Upload, Hash, FileUp, FolderSearch,
   MessageSquare, Briefcase, Bug, CalendarDays, BarChart2,
   TrendingUp, ShieldAlert, ShieldCheck, Info, ChevronRight,
-  Zap, Users, Link2, CheckSquare
+  Zap, Users, Link2, CheckSquare,
+  Paperclip, ImageIcon, FileText as FileTextIcon, X as XIcon
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-type ChatMessage = { id: string; role: "user" | "ia"; content: string; timestamp: Date };
+type ChatFile = {
+  id: string;
+  name: string;
+  size: number;
+  mimeType: string;
+  preview?: string;
+  content?: string;
+};
+
+type ChatMessage = {
+  id: string;
+  role: "user" | "ia";
+  content: string;
+  timestamp: Date;
+  files?: ChatFile[];
+};
 
 function genererReponseMockIA(msg: string, fileName?: string | null): string {
   const m = msg.toLowerCase();
@@ -1714,8 +1730,11 @@ export default function WorkspacePage() {
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
   const [chatInput, setChatInput] = useState("");
   const [chatLoading, setChatLoading] = useState(false);
+  const [chatFiles, setChatFiles] = useState<ChatFile[]>([]);
+  const [chatDragOver, setChatDragOver] = useState(false);
   const chatEndRef = useRef<HTMLDivElement>(null);
   const chatInputRef = useRef<HTMLTextAreaElement>(null);
+  const chatFileInputRef = useRef<HTMLInputElement>(null);
 
   const [openTabs, setOpenTabs] = useState<FileNode[]>([]);
   const [activeFileId, setActiveFileId] = useState<string | null>(null);
@@ -1927,15 +1946,51 @@ export default function WorkspacePage() {
     chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [chatMessages, chatLoading]);
 
+  const addChatFiles = useCallback((fileList: FileList | File[]) => {
+    const files = Array.from(fileList);
+    files.forEach(file => {
+      const id = crypto.randomUUID();
+      const isImage = file.type.startsWith("image/");
+      const isText = file.type.startsWith("text/") || /\.(php|js|ts|tsx|jsx|html|css|json|xml|sql|md|py|rb|java|go|rs|c|cpp|h)$/i.test(file.name);
+      if (isImage) {
+        const reader = new FileReader();
+        reader.onload = e => {
+          setChatFiles(prev => [...prev, { id, name: file.name, size: file.size, mimeType: file.type, preview: e.target?.result as string }]);
+        };
+        reader.readAsDataURL(file);
+      } else if (isText) {
+        const reader = new FileReader();
+        reader.onload = e => {
+          setChatFiles(prev => [...prev, { id, name: file.name, size: file.size, mimeType: file.type, content: e.target?.result as string }]);
+        };
+        reader.readAsText(file);
+      } else {
+        setChatFiles(prev => [...prev, { id, name: file.name, size: file.size, mimeType: file.type }]);
+      }
+    });
+  }, []);
+
+  const removeChatFile = useCallback((id: string) => {
+    setChatFiles(prev => prev.filter(f => f.id !== id));
+  }, []);
+
   const handleChatSend = async () => {
     const text = chatInput.trim();
-    if (!text || chatLoading) return;
+    if ((!text && chatFiles.length === 0) || chatLoading) return;
+    const filesToSend = [...chatFiles];
     setChatInput("");
-    const userMsg: ChatMessage = { id: crypto.randomUUID(), role: "user", content: text, timestamp: new Date() };
+    setChatFiles([]);
+    const userMsg: ChatMessage = {
+      id: crypto.randomUUID(),
+      role: "user",
+      content: text,
+      timestamp: new Date(),
+      files: filesToSend.length > 0 ? filesToSend : undefined,
+    };
     setChatMessages(prev => [...prev, userMsg]);
     setChatLoading(true);
     await new Promise(r => setTimeout(r, 900 + Math.random() * 800));
-    const reply = genererReponseMockIA(text, activeFile?.name ?? null);
+    const reply = genererReponseMockIA(text || filesToSend.map(f => f.name).join(", "), activeFile?.name ?? null);
     const iaMsg: ChatMessage = { id: crypto.randomUUID(), role: "ia", content: reply, timestamp: new Date() };
     setChatMessages(prev => [...prev, iaMsg]);
     setChatLoading(false);
@@ -2563,13 +2618,44 @@ export default function WorkspacePage() {
                           <Sparkles className="w-3 h-3 text-primary" />
                         </div>
                       )}
-                      <div className={cn(
-                        "max-w-[85%] rounded-xl px-3 py-2 text-[11px] leading-relaxed whitespace-pre-wrap break-words",
-                        msg.role === "user"
-                          ? "bg-primary text-white rounded-tr-sm"
-                          : "bg-muted text-foreground rounded-tl-sm border border-border/60"
-                      )}>
-                        {msg.content}
+                      <div className="max-w-[85%] flex flex-col gap-1">
+                        {/* Pièces jointes */}
+                        {msg.files && msg.files.length > 0 && (
+                          <div className={cn("flex flex-wrap gap-1", msg.role === "user" ? "justify-end" : "justify-start")}>
+                            {msg.files.map(f => (
+                              f.preview ? (
+                                <img
+                                  key={f.id}
+                                  src={f.preview}
+                                  alt={f.name}
+                                  className="w-28 h-20 object-cover rounded-lg border border-white/20"
+                                  title={f.name}
+                                />
+                              ) : (
+                                <div key={f.id} className={cn(
+                                  "flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] border",
+                                  msg.role === "user"
+                                    ? "bg-primary/80 text-white border-white/20"
+                                    : "bg-muted text-foreground border-border/50"
+                                )}>
+                                  <FileTextIcon className="w-3 h-3 shrink-0" />
+                                  <span className="truncate max-w-[100px]">{f.name}</span>
+                                </div>
+                              )
+                            ))}
+                          </div>
+                        )}
+                        {/* Texte */}
+                        {msg.content && (
+                          <div className={cn(
+                            "rounded-xl px-3 py-2 text-[11px] leading-relaxed whitespace-pre-wrap break-words",
+                            msg.role === "user"
+                              ? "bg-primary text-white rounded-tr-sm"
+                              : "bg-muted text-foreground rounded-tl-sm border border-border/60"
+                          )}>
+                            {msg.content}
+                          </div>
+                        )}
                       </div>
                     </div>
                   ))}
@@ -2591,24 +2677,90 @@ export default function WorkspacePage() {
 
                 {/* Saisie */}
                 <div className="shrink-0 border-t border-border/60 p-2.5">
-                  <div className="flex flex-col gap-1.5 bg-muted/40 rounded-xl border border-border/60 px-2.5 pt-2 pb-1.5 focus-within:border-primary/40 transition-colors">
+                  {/* Input caché pour le sélecteur de fichiers */}
+                  <input
+                    ref={chatFileInputRef}
+                    type="file"
+                    multiple
+                    className="hidden"
+                    onChange={e => { if (e.target.files) { addChatFiles(e.target.files); e.target.value = ""; } }}
+                  />
+
+                  <div
+                    className={cn(
+                      "flex flex-col gap-1.5 bg-muted/40 rounded-xl border px-2.5 pt-2 pb-1.5 focus-within:border-primary/40 transition-colors relative",
+                      chatDragOver ? "border-primary bg-primary/5 border-dashed" : "border-border/60"
+                    )}
+                    onDragEnter={e => { e.preventDefault(); e.stopPropagation(); setChatDragOver(true); }}
+                    onDragLeave={e => { e.preventDefault(); e.stopPropagation(); if (!e.currentTarget.contains(e.relatedTarget as Node)) setChatDragOver(false); }}
+                    onDragOver={e => { e.preventDefault(); e.stopPropagation(); }}
+                    onDrop={e => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      setChatDragOver(false);
+                      if (e.dataTransfer.files.length > 0) addChatFiles(e.dataTransfer.files);
+                    }}
+                  >
+                    {/* Overlay drag */}
+                    {chatDragOver && (
+                      <div className="absolute inset-0 rounded-xl flex items-center justify-center z-10 pointer-events-none">
+                        <div className="flex flex-col items-center gap-1">
+                          <Paperclip className="w-5 h-5 text-primary" />
+                          <p className="text-[11px] font-semibold text-primary">Déposer ici</p>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Prévisualisation des fichiers joints */}
+                    {chatFiles.length > 0 && (
+                      <div className="flex flex-wrap gap-1.5 pb-1.5 border-b border-border/40">
+                        {chatFiles.map(f => (
+                          <div key={f.id} className="flex items-center gap-1 bg-muted rounded-lg px-1.5 py-1 border border-border/50 max-w-full group">
+                            {f.preview ? (
+                              <img src={f.preview} alt={f.name} className="w-7 h-7 rounded object-cover shrink-0" />
+                            ) : f.mimeType.startsWith("image/") ? (
+                              <ImageIcon className="w-4 h-4 text-violet-500 shrink-0" />
+                            ) : (
+                              <FileTextIcon className="w-4 h-4 text-primary shrink-0" />
+                            )}
+                            <span className="text-[10px] text-foreground truncate max-w-[90px]" title={f.name}>{f.name}</span>
+                            <button
+                              onClick={() => removeChatFile(f.id)}
+                              className="text-muted-foreground/60 hover:text-destructive transition-colors ml-0.5 shrink-0"
+                            >
+                              <XIcon className="w-3 h-3" />
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
                     <textarea
                       ref={chatInputRef}
                       value={chatInput}
                       onChange={e => setChatInput(e.target.value)}
                       onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleChatSend(); } }}
-                      placeholder="Demandez quelque chose sur le code…"
+                      placeholder={chatDragOver ? "" : "Demandez quelque chose sur le code…"}
                       rows={2}
                       className="w-full bg-transparent text-[11px] text-foreground placeholder:text-muted-foreground/50 resize-none focus:outline-none leading-relaxed"
                     />
                     <div className="flex items-center justify-between">
-                      <span className="text-[10px] text-muted-foreground/50">↵ Envoyer · ⇧↵ Nouvelle ligne</span>
+                      <div className="flex items-center gap-1.5">
+                        <button
+                          onClick={() => chatFileInputRef.current?.click()}
+                          title="Joindre des fichiers"
+                          className="p-1 rounded-md text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors"
+                        >
+                          <Paperclip className="w-3.5 h-3.5" />
+                        </button>
+                        <span className="text-[10px] text-muted-foreground/50">↵ Envoyer · ⇧↵ Ligne</span>
+                      </div>
                       <button
                         onClick={handleChatSend}
-                        disabled={!chatInput.trim() || chatLoading}
+                        disabled={(!chatInput.trim() && chatFiles.length === 0) || chatLoading}
                         className={cn(
                           "flex items-center gap-1 px-2 py-1 rounded-lg text-[11px] font-medium transition-all",
-                          chatInput.trim() && !chatLoading
+                          (chatInput.trim() || chatFiles.length > 0) && !chatLoading
                             ? "bg-primary text-white hover:bg-primary/90"
                             : "bg-muted text-muted-foreground/40 cursor-not-allowed"
                         )}>
