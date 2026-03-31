@@ -1,10 +1,11 @@
-import { ReactNode, useState, useEffect, useRef } from "react";
+import { ReactNode, useState, useEffect, useRef, useMemo } from "react";
 import { Link, useLocation } from "wouter";
 import { useAuth } from "@/hooks/use-auth";
 import { useTheme } from "@/hooks/use-theme";
 import { useService } from "@/hooks/use-service";
 import { SERVICE_ORDER, SERVICES } from "@/lib/service-config";
 import type { ServiceId } from "@/lib/service-config";
+import { loadNavConfig, isNavItemVisible, resolveUserRoleId } from "@/lib/nav-config";
 import { Logo } from "./logo";
 import {
   Settings,
@@ -55,7 +56,15 @@ export function AppLayout({ children }: { children: ReactNode }) {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [switcherOpen]);
 
-  const navItems = activeService.nav;
+  const navConfig = useMemo(() => loadNavConfig(), []);
+  const userRoleId = resolveUserRoleId(user?.role);
+  const navItems = useMemo(
+    () =>
+      activeService.nav.filter((item) =>
+        isNavItemVisible(navConfig, activeService.id as ServiceId, userRoleId, item.href)
+      ),
+    [activeService, navConfig, userRoleId]
+  );
 
   function handleServiceSwitch(id: ServiceId) {
     setSwitcherOpen(false);
