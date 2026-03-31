@@ -2,7 +2,7 @@ export const mockProjets = [
   {
     id: "pr-001",
     clientId: "cli-001",
-    ref: "PR84231",
+    ref: "PRJ84231",
     name: "Site E-commerce Maison Éclat",
     description: "Plateforme e-commerce principale avec gestion catalogue, tunnel de paiement, programme de fidélité et espace B2C.",
     status: "active",
@@ -12,7 +12,7 @@ export const mockProjets = [
   {
     id: "pr-002",
     clientId: "cli-002",
-    ref: "PR67154",
+    ref: "PRJ67154",
     name: "Plateforme Distribution TechFlow",
     description: "Solution de distribution B2B multi-canaux avec connecteurs ERP, gestion transporteurs et tarification multi-niveaux.",
     status: "active",
@@ -22,7 +22,7 @@ export const mockProjets = [
   {
     id: "pr-003",
     clientId: "cli-003",
-    ref: "PR95721",
+    ref: "PRJ95721",
     name: "NeoShop E-commerce High-Tech",
     description: "Boutique en ligne high-tech avec catalogue étendu, personnalisation IA, checkout optimisé et performances Web Vitals.",
     status: "critical",
@@ -32,7 +32,7 @@ export const mockProjets = [
   {
     id: "pr-004",
     clientId: "cli-004",
-    ref: "PR33847",
+    ref: "PRJ33847",
     name: "OmniRetail Commerce Unifié",
     description: "Infrastructure de commerce omnicanal synchronisant boutique en ligne, caisses physiques et entrepôt en temps réel.",
     status: "active",
@@ -42,7 +42,7 @@ export const mockProjets = [
   {
     id: "pr-005",
     clientId: "cli-005",
-    ref: "PR12590",
+    ref: "PRJ12590",
     name: "Luxe & Co Boutique Digitale",
     description: "Expérience d'achat luxe en ligne avec configurateur 3D, service client premium et gestion articles sur mesure.",
     status: "planned",
@@ -52,7 +52,7 @@ export const mockProjets = [
   {
     id: "pr-006",
     clientId: "cli-006",
-    ref: "PR58403",
+    ref: "PRJ58403",
     name: "GreenMarket Commerce Bio",
     description: "Plateforme de commerce bio engagé avec abonnements récurrents, box personnalisées et gestion fournisseurs locaux.",
     status: "active",
