@@ -1303,7 +1303,8 @@ function CodeViewer({ file, onClose, prodUrl, saveUrl, editContent, onEditChange
                 </div>
 
                 <div className="px-6 py-4 border-t border-border flex items-center justify-end gap-2 shrink-0">
-                  <Button variant="ghost" size="sm" onClick={() => { performSave(); setSaveModalOpen(false); }}>Ignorer et enregistrer</Button>
+                  <Button variant="ghost" size="sm" onClick={() => setSaveModalOpen(false)}>Annuler et ne pas enregistrer</Button>
+                  <Button variant="destructive" size="sm" onClick={() => { performSave(); setSaveModalOpen(false); }}>Ignorer et enregistrer</Button>
                   <Button size="sm" onClick={handleLancerAnalyse} disabled={!saveAnalyseOpts.fonctionnelle && !saveAnalyseOpts.revueCode}>
                     <Sparkles className="w-3.5 h-3.5 mr-1.5" />Lancer l'analyse
                   </Button>
