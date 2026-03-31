@@ -10,7 +10,8 @@ import {
   Globe, ChevronDown, ChevronRight as ChevronRightIcon, Search,
   Folder, FolderOpen, File, LayoutGrid, List,
   SortAsc, Filter, Home, ExternalLink, RefreshCw, Settings2,
-  X, GitBranch, Code2, Copy, Check, Pencil, RotateCcw, Save
+  X, GitBranch, Code2, Copy, Check, Pencil, RotateCcw, Save,
+  AlertCircle, Clock, ZapOff, ChevronLeft
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -535,21 +536,47 @@ const MONACO_OPTIONS_BASE = {
   quickSuggestions: { other: true, comments: false, strings: false },
 };
 
-function CodeViewer({ file, onClose, prodUrl, saveUrl, editContent, onEditChange }: {
+function CodeViewer({ file, onClose, prodUrl, saveUrl, editContent, onEditChange, scrollToLine, onScrollToLineDone }: {
   file: FileNode;
   onClose: () => void;
   prodUrl?: string | null;
   saveUrl?: string | null;
   editContent: string;
   onEditChange: (v: string) => void;
+  scrollToLine?: number | null;
+  onScrollToLineDone?: () => void;
 }) {
   const [tab, setTab] = useState<"code" | "diff" | "edit">("code");
   const [copied, setCopied] = useState(false);
-  const [saved, setSaved] = useState(false);
+  const [savedAt, setSavedAt] = useState<Date | null>(null);
+  const [lintProblems, setLintProblems] = useState<LintMarker[]>([]);
+  const editorRef = useRef<any>(null);
+  const monacoRef = useRef<any>(null);
   const originalCode = useMemo(() => getMockCode(file.name), [file.name]);
   const saveCode = useMemo(() => getMockSaveCode(file.name), [file.name]);
   const language = useMemo(() => getMonacoLanguage(file.name), [file.name]);
   const isEdited = editContent !== originalCode;
+  const errCount = lintProblems.filter(m => m.severity === 8).length;
+  const warnCount = lintProblems.filter(m => m.severity === 4).length;
+
+  const applyLint = useCallback((editor: any, monaco: any, code: string) => {
+    const model = editor?.getModel();
+    if (!model) return;
+    const markers = getMockLintMarkers(file.name, code);
+    monaco.editor.setModelMarkers(model, "oasis-lint", markers);
+    setLintProblems(markers);
+  }, [file.name]);
+
+  useEffect(() => {
+    if (scrollToLine && editorRef.current) {
+      if (tab !== "code") setTab("code");
+      setTimeout(() => {
+        editorRef.current?.revealLineInCenter(scrollToLine);
+        editorRef.current?.setPosition({ lineNumber: scrollToLine, column: 1 });
+        onScrollToLineDone?.();
+      }, 80);
+    }
+  }, [scrollToLine]);
 
   const handleCopy = () => {
     const content = tab === "edit" ? editContent : originalCode;
@@ -560,11 +587,16 @@ function CodeViewer({ file, onClose, prodUrl, saveUrl, editContent, onEditChange
   };
 
   const handleSave = () => {
-    setSaved(true);
-    setTimeout(() => setSaved(false), 2500);
+    setSavedAt(new Date());
+    try {
+      localStorage.setItem(`oasis_file_${file.id}`, editContent);
+    } catch {}
   };
 
-  const handleReset = () => onEditChange(originalCode);
+  const handleReset = () => {
+    onEditChange(originalCode);
+    try { localStorage.removeItem(`oasis_file_${file.id}`); } catch {}
+  };
 
   return (
     <div className="flex flex-col h-full bg-[#1e1e2e] rounded-xl border border-border/30 shadow-sm overflow-hidden">
@@ -575,9 +607,10 @@ function CodeViewer({ file, onClose, prodUrl, saveUrl, editContent, onEditChange
           <span className="text-sm font-mono text-white/90 truncate">{file.name}</span>
           {file.size && <span className="text-xs text-white/40 shrink-0">{file.size}</span>}
           <span className="shrink-0 text-[10px] text-white/30 bg-white/5 border border-white/10 px-1.5 py-0.5 rounded font-mono">{language}</span>
-          {isEdited && (
-            <span className="shrink-0 text-[10px] bg-amber-500/20 text-amber-300 border border-amber-500/30 px-1.5 py-0.5 rounded-full font-medium">● modifié</span>
-          )}
+          {isEdited && <span className="shrink-0 text-[10px] bg-amber-500/20 text-amber-300 border border-amber-500/30 px-1.5 py-0.5 rounded-full font-medium">● modifié</span>}
+          {errCount > 0 && <span className="shrink-0 flex items-center gap-1 text-[10px] bg-red-500/20 text-red-300 border border-red-500/30 px-1.5 py-0.5 rounded-full font-medium"><AlertCircle className="w-2.5 h-2.5" />{errCount} erreur{errCount > 1 ? "s" : ""}</span>}
+          {warnCount > 0 && <span className="shrink-0 flex items-center gap-1 text-[10px] bg-amber-500/15 text-amber-400 border border-amber-500/25 px-1.5 py-0.5 rounded-full font-medium"><ZapOff className="w-2.5 h-2.5" />{warnCount} avertissement{warnCount > 1 ? "s" : ""}</span>}
+          {savedAt && <span className="shrink-0 flex items-center gap-1 text-[10px] bg-emerald-500/15 text-emerald-400 border border-emerald-500/25 px-1.5 py-0.5 rounded-full font-medium"><Clock className="w-2.5 h-2.5" />Sauvegardé {savedAt.toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit", second: "2-digit" })}</span>}
         </div>
         <div className="flex items-center gap-2 shrink-0">
           <div className="flex items-center border border-white/10 rounded-md overflow-hidden">
@@ -602,8 +635,7 @@ function CodeViewer({ file, onClose, prodUrl, saveUrl, editContent, onEditChange
               </button>
               <button onClick={handleSave}
                 className="flex items-center gap-1.5 px-2.5 py-1 text-xs bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 border border-emerald-500/30 rounded transition-colors">
-                {saved ? <Check className="w-3 h-3" /> : <Save className="w-3 h-3" />}
-                {saved ? "Sauvegardé" : "Sauvegarder"}
+                <Save className="w-3 h-3" />Enregistrer
               </button>
             </>
           ) : (
@@ -644,6 +676,11 @@ function CodeViewer({ file, onClose, prodUrl, saveUrl, editContent, onEditChange
             value={originalCode}
             theme="vs-dark"
             options={{ ...MONACO_OPTIONS_BASE, readOnly: true }}
+            onMount={(editor, monaco) => {
+              editorRef.current = editor;
+              monacoRef.current = monaco;
+              applyLint(editor, monaco, originalCode);
+            }}
           />
         )}
         {tab === "edit" && (
@@ -654,6 +691,11 @@ function CodeViewer({ file, onClose, prodUrl, saveUrl, editContent, onEditChange
             theme="vs-dark"
             options={{ ...MONACO_OPTIONS_BASE, readOnly: false }}
             onChange={v => onEditChange(v ?? "")}
+            onMount={(editor, monaco) => {
+              editorRef.current = editor;
+              monacoRef.current = monaco;
+              applyLint(editor, monaco, editContent);
+            }}
           />
         )}
         {tab === "diff" && (
@@ -697,6 +739,66 @@ function getMockSaveCode(name: string): string {
   result.splice(changeAt + 1, 0, "    // TODO: valider avant traitement");
   if (result[changeAt2 + 1]) result[changeAt2 + 1] = result[changeAt2 + 1] + ` // màj ${new Date().toLocaleDateString("fr-FR")}`;
   return result.join("\n");
+}
+
+type LintMarker = { startLineNumber: number; endLineNumber: number; startColumn: number; endColumn: number; message: string; severity: number };
+
+function getMockLintMarkers(filename: string, code: string): LintMarker[] {
+  const lines = code.split("\n");
+  const markers: LintMarker[] = [];
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+    const ln = i + 1;
+    const todoIdx = line.search(/TODO|FIXME|HACK/i);
+    if (todoIdx !== -1)
+      markers.push({ startLineNumber: ln, endLineNumber: ln, startColumn: todoIdx + 1, endColumn: line.length + 1, message: "TODO / FIXME non résolu", severity: 4 });
+    if (filename.endsWith(".php") && /\beval\s*\(/.test(line)) {
+      const c = line.search(/\beval\s*\(/) + 1;
+      markers.push({ startLineNumber: ln, endLineNumber: ln, startColumn: c, endColumn: c + 4, message: "eval() : risque de sécurité critique", severity: 8 });
+    }
+    if ((filename.endsWith(".js") || filename.endsWith(".ts")) && /console\.log/.test(line)) {
+      const c = line.indexOf("console.log") + 1;
+      markers.push({ startLineNumber: ln, endLineNumber: ln, startColumn: c, endColumn: c + 11, message: "console.log() à retirer avant mise en production", severity: 4 });
+    }
+  }
+  return markers;
+}
+
+function flattenTree(nodes: FileNode[]): FileNode[] {
+  const out: FileNode[] = [];
+  for (const n of nodes) {
+    if (n.type === "file") out.push(n);
+    else if (n.children) out.push(...flattenTree(n.children));
+  }
+  return out;
+}
+
+type SearchHit = { file: FileNode; lineNo: number; lineText: string };
+
+function searchAcrossFiles(query: string, tree: FileNode[]): Map<string, SearchHit[]> {
+  const q = query.toLowerCase();
+  const grouped = new Map<string, SearchHit[]>();
+  for (const file of flattenTree(tree)) {
+    const lines = getMockCode(file.name).split("\n");
+    const hits: SearchHit[] = [];
+    for (let i = 0; i < lines.length; i++) {
+      if (lines[i].toLowerCase().includes(q)) hits.push({ file, lineNo: i + 1, lineText: lines[i] });
+    }
+    if (hits.length) grouped.set(file.id, hits);
+  }
+  return grouped;
+}
+
+function HighlightMatch({ text, query }: { text: string; query: string }) {
+  const idx = text.toLowerCase().indexOf(query.toLowerCase());
+  if (idx === -1) return <span className="truncate">{text}</span>;
+  return (
+    <span className="truncate">
+      {text.slice(0, idx)}
+      <mark className="bg-primary/40 text-primary font-semibold rounded-sm not-italic">{text.slice(idx, idx + query.length)}</mark>
+      {text.slice(idx + query.length)}
+    </span>
+  );
 }
 
 function getFileIconColor(node: FileNode): string {
@@ -885,6 +987,92 @@ function TreeView({ nodes, expandedIds, toggle, depth, onFileSelect, selectedFil
   );
 }
 
+function SearchPanel({ tree, query, onQueryChange, onFileSelect, onClose }: {
+  tree: FileNode[];
+  query: string;
+  onQueryChange: (q: string) => void;
+  onFileSelect: (node: FileNode, lineNo?: number) => void;
+  onClose: () => void;
+}) {
+  const results = useMemo(
+    () => query.length >= 2 ? searchAcrossFiles(query, tree) : new Map<string, SearchHit[]>(),
+    [query, tree]
+  );
+  const totalHits = useMemo(() => [...results.values()].reduce((s, r) => s + r.length, 0), [results]);
+  const inputRef = useRef<HTMLInputElement>(null);
+  useEffect(() => { inputRef.current?.focus(); }, []);
+
+  return (
+    <div className="flex flex-col h-full bg-card rounded-xl border border-border/60 shadow-sm overflow-hidden">
+      <div className="border-b border-border/60 px-3 py-2.5 bg-muted/20 shrink-0 space-y-2">
+        <div className="flex items-center gap-1.5">
+          <button onClick={onClose} title="Retour à l'explorateur"
+            className="p-1 text-muted-foreground hover:text-foreground rounded transition-colors shrink-0">
+            <ChevronLeft className="w-4 h-4" />
+          </button>
+          <div className="relative flex-1">
+            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
+            <input ref={inputRef} type="text" placeholder="Rechercher dans tous les fichiers..." value={query}
+              onChange={e => onQueryChange(e.target.value)}
+              className="w-full pl-8 pr-3 py-1.5 text-xs bg-card border border-border rounded focus:outline-none focus:ring-1 focus:ring-primary/40" />
+            {query && (
+              <button onClick={() => onQueryChange("")}
+                className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
+                <X className="w-3 h-3" />
+              </button>
+            )}
+          </div>
+        </div>
+        {query.length >= 2 && (
+          <p className="text-[10px] text-muted-foreground pl-1">
+            {results.size === 0 ? "Aucun résultat" : `${totalHits} occurrence${totalHits > 1 ? "s" : ""} dans ${results.size} fichier${results.size > 1 ? "s" : ""}`}
+          </p>
+        )}
+      </div>
+
+      <div className="flex-1 overflow-y-auto">
+        {query.length < 2 ? (
+          <div className="flex flex-col items-center justify-center h-full text-center p-6 gap-3">
+            <Search className="w-9 h-9 text-muted-foreground/30" />
+            <p className="text-xs text-muted-foreground leading-relaxed">Tapez au moins 2 caractères<br />pour rechercher dans le code</p>
+          </div>
+        ) : results.size === 0 ? (
+          <div className="flex flex-col items-center justify-center h-full text-center p-6 gap-3">
+            <p className="text-sm text-muted-foreground">Aucun résultat pour</p>
+            <code className="text-xs bg-muted rounded px-2 py-1 text-foreground">«&nbsp;{query}&nbsp;»</code>
+          </div>
+        ) : (
+          <div className="py-1">
+            {[...results.entries()].map(([fileId, hits]) => {
+              const file = hits[0].file;
+              return (
+                <div key={fileId} className="mb-0.5">
+                  <div className="flex items-center gap-2 px-3 py-1.5 sticky top-0 bg-card/95 backdrop-blur-sm z-10 border-b border-border/30">
+                    <File className={cn("w-3 h-3 shrink-0", getFileIconColor(file))} strokeWidth={1.5} />
+                    <span className="text-xs font-medium text-foreground truncate flex-1">{file.name}</span>
+                    <span className="text-[10px] bg-primary/10 text-primary rounded px-1.5 py-0.5 font-mono shrink-0">{hits.length}</span>
+                  </div>
+                  {hits.map((hit, i) => (
+                    <button key={i} onClick={() => onFileSelect(hit.file, hit.lineNo)}
+                      className="w-full text-left px-3 py-1 hover:bg-primary/5 group transition-colors">
+                      <div className="flex items-baseline gap-2">
+                        <span className="text-[10px] text-muted-foreground shrink-0 w-6 text-right font-mono tabular-nums">{hit.lineNo}</span>
+                        <span className="text-[11px] font-mono text-foreground/70 truncate flex-1">
+                          <HighlightMatch text={hit.lineText.trim()} query={query} />
+                        </span>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 export default function WorkspacePage() {
   const [, params] = useRoute("/workspace/:prestationId");
   const prestationId = params?.prestationId || "";
@@ -907,12 +1095,16 @@ export default function WorkspacePage() {
   const [activeFileId, setActiveFileId] = useState<string | null>(null);
   const [editedContents, setEditedContents] = useState<Record<string, string>>({});
   const [allPrestationUrls, setAllPrestationUrls] = useState<{ url: string; type: "prod" | "save"; name: string }[]>([]);
+  const [searchMode, setSearchMode] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [scrollToLine, setScrollToLine] = useState<number | null>(null);
 
   const activeFile = openTabs.find(t => t.id === activeFileId) ?? null;
 
-  const handleFileSelect = (node: FileNode) => {
+  const handleFileSelect = (node: FileNode, lineNo?: number) => {
     setOpenTabs(prev => prev.find(t => t.id === node.id) ? prev : [...prev, node]);
     setActiveFileId(node.id);
+    setScrollToLine(lineNo ?? null);
   };
 
   const handleCloseTab = (fileId: string, e?: React.MouseEvent) => {
@@ -983,6 +1175,9 @@ export default function WorkspacePage() {
       setOpenTabs([]);
       setActiveFileId(null);
       setEditedContents({});
+      setSearchMode(false);
+      setSearchQuery("");
+      setScrollToLine(null);
     }
   }, [urlInput]);
 
@@ -994,6 +1189,9 @@ export default function WorkspacePage() {
     setOpenTabs([]);
     setActiveFileId(null);
     setEditedContents({});
+    setSearchMode(false);
+    setSearchQuery("");
+    setScrollToLine(null);
   };
 
   const handleRunAnalysis = async () => {
@@ -1227,9 +1425,34 @@ export default function WorkspacePage() {
             </div>
           ) : fileTree ? (
             <div className={cn("h-full flex gap-3", openTabs.length > 0 ? "flex-row" : "")}>
-              {/* File explorer — fixed 260px when tabs open, full width otherwise */}
-              <div className={cn("h-full shrink-0 transition-all", openTabs.length > 0 ? "w-[260px]" : "w-full")}>
-                <FileExplorer tree={fileTree} onFileSelect={handleFileSelect} selectedFileId={activeFileId} />
+              {/* Left panel: explorer or search */}
+              <div className={cn("h-full shrink-0 transition-all flex flex-col gap-0", openTabs.length > 0 ? "w-[260px]" : "w-full")}>
+                {/* Mode toggle strip */}
+                {!searchMode && (
+                  <div className="flex items-center justify-end mb-1.5 shrink-0">
+                    <button onClick={() => setSearchMode(true)} title="Recherche dans les fichiers"
+                      className="flex items-center gap-1.5 px-2 py-1 text-xs text-muted-foreground hover:text-foreground bg-card border border-border/60 rounded-lg hover:bg-muted/60 transition-colors shadow-sm">
+                      <Search className="w-3.5 h-3.5" />
+                      <span>Rechercher</span>
+                    </button>
+                  </div>
+                )}
+                <div className="flex-1 min-h-0">
+                  {searchMode ? (
+                    <SearchPanel
+                      tree={fileTree}
+                      query={searchQuery}
+                      onQueryChange={setSearchQuery}
+                      onFileSelect={(node, lineNo) => {
+                        handleFileSelect(node, lineNo);
+                        setSearchMode(false);
+                      }}
+                      onClose={() => setSearchMode(false)}
+                    />
+                  ) : (
+                    <FileExplorer tree={fileTree} onFileSelect={handleFileSelect} selectedFileId={activeFileId} />
+                  )}
+                </div>
               </div>
 
               {/* Tab bar + editor */}
@@ -1273,6 +1496,8 @@ export default function WorkspacePage() {
                         onClose={() => handleCloseTab(activeFile.id)}
                         editContent={editedContents[activeFile.id] ?? getMockCode(activeFile.name)}
                         onEditChange={v => setEditedContents(prev => ({ ...prev, [activeFile.id]: v }))}
+                        scrollToLine={scrollToLine}
+                        onScrollToLineDone={() => setScrollToLine(null)}
                         prodUrl={prestation?.productionUrl ?? allPrestationUrls.find(e => e.url === selectedUrl && e.type === "prod")?.url ?? (selectedUrl ?? null)}
                         saveUrl={prestation?.saveUrls?.[0] ?? allPrestationUrls.find(e => e.name === allPrestationUrls.find(e2 => e2.url === selectedUrl)?.name && e.type === "save")?.url ?? null}
                       />
