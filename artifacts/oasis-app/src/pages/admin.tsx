@@ -162,7 +162,7 @@ export default function AdminPage() {
 
 function ExportCard() {
   const [isExporting, setIsExporting] = useState(false);
-  const [exportStatus, setExportStatus] = useState<{ type: "success" | "error"; message: string } | null>(null);
+  const [exportStatus, setExportStatus] = useState<{ type: "success" | "error"; message: string; details?: string } | null>(null);
 
   const handleExport = async () => {
     setIsExporting(true);
@@ -201,29 +201,43 @@ function ExportCard() {
           Exporter le code source
         </CardTitle>
         <CardDescription>
-          Téléchargez une archive ZIP du projet complet pour le déployer dans un environnement Docker, Kubernetes ou via des pipelines CI/CD.
+          Téléchargez une archive ZIP du projet complet pour le déployer via Docker Compose, Kubernetes ou un pipeline CI/CD (Codify).
         </CardDescription>
       </CardHeader>
       <CardContent className="p-6 space-y-4">
-        <div className="bg-muted/20 rounded-lg p-4 border border-border/40">
-          <p className="text-sm text-muted-foreground mb-2 font-medium">Fichiers exclus de l'archive :</p>
-          <div className="flex flex-wrap gap-2">
-            {["node_modules", ".git", "dist", ".local", ".env", ".cache"].map(item => (
-              <span key={item} className="px-2 py-1 bg-muted text-muted-foreground rounded text-xs font-mono border border-border">
-                {item}
-              </span>
-            ))}
+        <div className="bg-muted/20 rounded-lg p-4 border border-border/40 space-y-3">
+          <div>
+            <p className="text-sm text-muted-foreground mb-2 font-medium">Fichiers exclus de l'archive :</p>
+            <div className="flex flex-wrap gap-2">
+              {["node_modules", ".git", "dist", ".local", ".env", ".cache"].map(item => (
+                <span key={item} className="px-2 py-1 bg-muted text-muted-foreground rounded text-xs font-mono border border-border">
+                  {item}
+                </span>
+              ))}
+            </div>
+          </div>
+          <div className="pt-2 border-t border-border/40">
+            <p className="text-xs text-muted-foreground">
+              <span className="font-semibold text-foreground">Docker / Kubernetes :</span>{" "}
+              Définissez la variable d'environnement{" "}
+              <code className="bg-muted px-1 rounded text-[11px]">OASIS_PROJECT_ROOT</code>{" "}
+              dans votre <code className="bg-muted px-1 rounded text-[11px]">docker-compose.yml</code> ou manifest K8s
+              pour pointer vers le volume monté contenant le code source.
+            </p>
           </div>
         </div>
 
         {exportStatus && (
-          <div className={`flex items-center gap-2 p-3 rounded-md text-sm border ${
-            exportStatus.type === "success" 
-              ? "bg-emerald-50 text-emerald-700 border-emerald-200" 
+          <div className={`flex items-start gap-2 p-3 rounded-md text-sm border ${
+            exportStatus.type === "success"
+              ? "bg-emerald-50 text-emerald-700 border-emerald-200"
               : "bg-destructive/10 text-destructive border-destructive/20"
           }`}>
-            {exportStatus.type === "success" ? <CheckCircle className="w-4 h-4 shrink-0" /> : <XCircle className="w-4 h-4 shrink-0" />}
-            {exportStatus.message}
+            {exportStatus.type === "success" ? <CheckCircle className="w-4 h-4 shrink-0 mt-0.5" /> : <XCircle className="w-4 h-4 shrink-0 mt-0.5" />}
+            <div>
+              <p>{exportStatus.message}</p>
+              {exportStatus.details && <p className="text-xs mt-1 opacity-80 font-mono">{exportStatus.details}</p>}
+            </div>
           </div>
         )}
 
@@ -244,7 +258,7 @@ function GitPushCard() {
   const [branch, setBranch] = useState("main");
   const [token, setToken] = useState("");
   const [isPushing, setIsPushing] = useState(false);
-  const [pushStatus, setPushStatus] = useState<{ type: "success" | "error"; message: string } | null>(null);
+  const [pushStatus, setPushStatus] = useState<{ type: "success" | "error"; message: string; details?: string } | null>(null);
 
   const handlePush = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -262,11 +276,13 @@ function GitPushCard() {
       });
       const data = await response.json();
       if (!response.ok) {
-        throw new Error(data.error || `Erreur ${response.status}`);
+        const err = new Error(data.error || `Erreur ${response.status}`) as any;
+        err.details = data.details;
+        throw err;
       }
       setPushStatus({ type: "success", message: data.message });
     } catch (error: any) {
-      setPushStatus({ type: "error", message: error.message || "Échec du push" });
+      setPushStatus({ type: "error", message: error.message || "Échec du push", details: error.details });
     } finally {
       setIsPushing(false);
     }
@@ -280,7 +296,8 @@ function GitPushCard() {
           Pousser vers Git
         </CardTitle>
         <CardDescription>
-          Envoyez le code source vers un dépôt GitHub ou GitLab distant. Le push utilise <code className="text-xs bg-muted px-1 rounded">--force</code> pour synchroniser l'historique.
+          Envoyez le code source vers un dépôt GitHub ou GitLab. Compatible Docker / Kubernetes via Codify — le repo est initialisé automatiquement si absent. Le push utilise{" "}
+          <code className="text-xs bg-muted px-1 rounded">--force</code> pour synchroniser l'historique.
         </CardDescription>
       </CardHeader>
       <CardContent className="p-6">
@@ -323,14 +340,29 @@ function GitPushCard() {
             </div>
           </div>
 
+          <div className="bg-muted/20 rounded-lg px-4 py-3 border border-border/40">
+            <p className="text-xs text-muted-foreground">
+              <span className="font-semibold text-foreground">Docker / Kubernetes :</span>{" "}
+              Assurez-vous que <code className="bg-muted px-1 rounded text-[11px]">git</code> est installé dans l'image
+              (ex&nbsp;: <code className="bg-muted px-1 rounded text-[11px]">RUN apt-get install -y git</code>) et définissez{" "}
+              <code className="bg-muted px-1 rounded text-[11px]">OASIS_PROJECT_ROOT</code> vers le volume contenant le code source.
+              Le repo Git est initialisé automatiquement si le répertoire n'en possède pas.
+            </p>
+          </div>
+
           {pushStatus && (
-            <div className={`flex items-center gap-2 p-3 rounded-md text-sm border ${
-              pushStatus.type === "success" 
-                ? "bg-emerald-50 text-emerald-700 border-emerald-200" 
+            <div className={`flex items-start gap-2 p-3 rounded-md text-sm border ${
+              pushStatus.type === "success"
+                ? "bg-emerald-50 text-emerald-700 border-emerald-200"
                 : "bg-destructive/10 text-destructive border-destructive/20"
             }`}>
-              {pushStatus.type === "success" ? <CheckCircle className="w-4 h-4 shrink-0" /> : <XCircle className="w-4 h-4 shrink-0" />}
-              {pushStatus.message}
+              {pushStatus.type === "success" ? <CheckCircle className="w-4 h-4 shrink-0 mt-0.5" /> : <XCircle className="w-4 h-4 shrink-0 mt-0.5" />}
+              <div>
+                <p>{pushStatus.message}</p>
+                {pushStatus.details && (
+                  <p className="text-xs mt-1 opacity-80 font-mono whitespace-pre-wrap">{pushStatus.details}</p>
+                )}
+              </div>
             </div>
           )}
 
