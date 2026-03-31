@@ -11,7 +11,8 @@ import {
   Folder, FolderOpen, File, LayoutGrid, List,
   SortAsc, Filter, Home, ExternalLink, RefreshCw, Settings2,
   X, GitBranch, Code2, Copy, Check, Pencil, RotateCcw, Save,
-  AlertCircle, Clock, ZapOff, ChevronLeft
+  AlertCircle, Clock, ZapOff, ChevronLeft,
+  Maximize2, Minimize2
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -536,7 +537,7 @@ const MONACO_OPTIONS_BASE = {
   quickSuggestions: { other: true, comments: false, strings: false },
 };
 
-function CodeViewer({ file, onClose, prodUrl, saveUrl, editContent, onEditChange, scrollToLine, onScrollToLineDone }: {
+function CodeViewer({ file, onClose, prodUrl, saveUrl, editContent, onEditChange, scrollToLine, onScrollToLineDone, isFullscreen, onToggleFullscreen }: {
   file: FileNode;
   onClose: () => void;
   prodUrl?: string | null;
@@ -545,6 +546,8 @@ function CodeViewer({ file, onClose, prodUrl, saveUrl, editContent, onEditChange
   onEditChange: (v: string) => void;
   scrollToLine?: number | null;
   onScrollToLineDone?: () => void;
+  isFullscreen?: boolean;
+  onToggleFullscreen?: () => void;
 }) {
   const [tab, setTab] = useState<"code" | "diff" | "edit">("code");
   const [copied, setCopied] = useState(false);
@@ -641,6 +644,12 @@ function CodeViewer({ file, onClose, prodUrl, saveUrl, editContent, onEditChange
           ) : (
             <button onClick={handleCopy} title="Copier" className="p-1.5 text-white/40 hover:text-white/80 transition-colors rounded">
               {copied ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
+            </button>
+          )}
+          {onToggleFullscreen && (
+            <button onClick={onToggleFullscreen} title={isFullscreen ? "Quitter le plein écran" : "Plein écran"}
+              className="p-1.5 text-white/40 hover:text-white/80 transition-colors rounded">
+              {isFullscreen ? <Minimize2 className="w-3.5 h-3.5" /> : <Maximize2 className="w-3.5 h-3.5" />}
             </button>
           )}
           <button onClick={onClose} title="Fermer" className="p-1.5 text-white/40 hover:text-white/80 transition-colors rounded">
@@ -1094,6 +1103,7 @@ export default function WorkspacePage() {
   const [openTabs, setOpenTabs] = useState<FileNode[]>([]);
   const [activeFileId, setActiveFileId] = useState<string | null>(null);
   const [editedContents, setEditedContents] = useState<Record<string, string>>({});
+  const [isEditorFullscreen, setIsEditorFullscreen] = useState(false);
   const [allPrestationUrls, setAllPrestationUrls] = useState<{ url: string; type: "prod" | "save"; name: string }[]>([]);
   const [searchMode, setSearchMode] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
@@ -1163,8 +1173,15 @@ export default function WorkspacePage() {
       if (siteRef.current && !siteRef.current.contains(e.target as Node)) setSiteOpen(false);
       if (analysisRef.current && !analysisRef.current.contains(e.target as Node)) setAnalysisOpen(false);
     }
+    function handleKeyDown(e: KeyboardEvent) {
+      if (e.key === "Escape") setIsEditorFullscreen(false);
+    }
     document.addEventListener("mousedown", handleClick);
-    return () => document.removeEventListener("mousedown", handleClick);
+    document.addEventListener("keydown", handleKeyDown);
+    return () => {
+      document.removeEventListener("mousedown", handleClick);
+      document.removeEventListener("keydown", handleKeyDown);
+    };
   }, []);
 
   const handleSearch = useCallback(() => {
@@ -1178,6 +1195,7 @@ export default function WorkspacePage() {
       setSearchMode(false);
       setSearchQuery("");
       setScrollToLine(null);
+      setIsEditorFullscreen(false);
     }
   }, [urlInput]);
 
@@ -1192,6 +1210,7 @@ export default function WorkspacePage() {
     setSearchMode(false);
     setSearchQuery("");
     setScrollToLine(null);
+    setIsEditorFullscreen(false);
   };
 
   const handleRunAnalysis = async () => {
@@ -1457,7 +1476,12 @@ export default function WorkspacePage() {
 
               {/* Tab bar + editor */}
               {openTabs.length > 0 && (
-                <div className="flex-1 h-full min-w-0 flex flex-col overflow-hidden rounded-xl border border-border/30 shadow-sm">
+                <div className={cn(
+                  "flex flex-col overflow-hidden rounded-xl border border-border/30 shadow-sm",
+                  isEditorFullscreen
+                    ? "fixed inset-0 z-50 rounded-none border-0 shadow-2xl"
+                    : "flex-1 h-full min-w-0"
+                )}>
                   {/* Tabs */}
                   <div className="flex items-stretch bg-[#181825] border-b border-white/10 overflow-x-auto shrink-0 scrollbar-none">
                     {openTabs.map(tab => {
@@ -1493,11 +1517,13 @@ export default function WorkspacePage() {
                       <CodeViewer
                         key={activeFile.id}
                         file={activeFile}
-                        onClose={() => handleCloseTab(activeFile.id)}
+                        onClose={() => { handleCloseTab(activeFile.id); setIsEditorFullscreen(false); }}
                         editContent={editedContents[activeFile.id] ?? getMockCode(activeFile.name)}
                         onEditChange={v => setEditedContents(prev => ({ ...prev, [activeFile.id]: v }))}
                         scrollToLine={scrollToLine}
                         onScrollToLineDone={() => setScrollToLine(null)}
+                        isFullscreen={isEditorFullscreen}
+                        onToggleFullscreen={() => setIsEditorFullscreen(f => !f)}
                         prodUrl={prestation?.productionUrl ?? allPrestationUrls.find(e => e.url === selectedUrl && e.type === "prod")?.url ?? (selectedUrl ?? null)}
                         saveUrl={prestation?.saveUrls?.[0] ?? allPrestationUrls.find(e => e.name === allPrestationUrls.find(e2 => e2.url === selectedUrl)?.name && e.type === "save")?.url ?? null}
                       />
