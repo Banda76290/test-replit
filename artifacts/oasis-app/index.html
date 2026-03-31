@@ -8,29 +8,6 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <script>
-      (function () {
-        var _Worker = window.Worker;
-        var workerCode = [
-          'self.onmessage=function(e){',
-          '  var d=e.data;',
-          '  if(d&&d.type==="init"){self.postMessage({type:"initialized"});return;}',
-          '  if(d&&typeof d.$id!=="undefined"){',
-          '    self.postMessage({$id:d.$id,$error:{name:"Error",message:"Worker unavailable",stack:""}});',
-          '  }',
-          '};'
-        ].join('');
-
-        function stubWorker(opts) {
-          var blob = new Blob([workerCode], { type: 'application/javascript' });
-          return new _Worker(URL.createObjectURL(blob), opts);
-        }
-
-        window.Worker = function () { return stubWorker(arguments[1]); };
-        window.Worker.prototype = _Worker.prototype;
-        self.MonacoEnvironment = { getWorker: function () { return stubWorker(); } };
-      })();
-    </script>
   </head>
   <body>
     <div id="root"></div>
