@@ -70,11 +70,11 @@ export const getHealthCheckQueryOptions = <
   TData = Awaited<ReturnType<typeof healthCheck>>,
   TError = ErrorType<unknown>,
 >(options?: {
-  query?: UseQueryOptions<
+  query?: Partial<UseQueryOptions<
     Awaited<ReturnType<typeof healthCheck>>,
     TError,
     TData
-  >;
+  >>;
   request?: SecondParameter<typeof customFetch>;
 }) => {
   const { query: queryOptions, request: requestOptions } = options ?? {};
@@ -105,11 +105,11 @@ export function useHealthCheck<
   TData = Awaited<ReturnType<typeof healthCheck>>,
   TError = ErrorType<unknown>,
 >(options?: {
-  query?: UseQueryOptions<
+  query?: Partial<UseQueryOptions<
     Awaited<ReturnType<typeof healthCheck>>,
     TError,
     TData
-  >;
+  >>;
   request?: SecondParameter<typeof customFetch>;
 }): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
   const queryOptions = getHealthCheckQueryOptions(options);
@@ -143,7 +143,7 @@ export const getGetMeQueryOptions = <
   TData = Awaited<ReturnType<typeof getMe>>,
   TError = ErrorType<unknown>,
 >(options?: {
-  query?: UseQueryOptions<Awaited<ReturnType<typeof getMe>>, TError, TData>;
+  query?: Partial<UseQueryOptions<Awaited<ReturnType<typeof getMe>>, TError, TData>>;
   request?: SecondParameter<typeof customFetch>;
 }) => {
   const { query: queryOptions, request: requestOptions } = options ?? {};
@@ -172,7 +172,7 @@ export function useGetMe<
   TData = Awaited<ReturnType<typeof getMe>>,
   TError = ErrorType<unknown>,
 >(options?: {
-  query?: UseQueryOptions<Awaited<ReturnType<typeof getMe>>, TError, TData>;
+  query?: Partial<UseQueryOptions<Awaited<ReturnType<typeof getMe>>, TError, TData>>;
   request?: SecondParameter<typeof customFetch>;
 }): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
   const queryOptions = getGetMeQueryOptions(options);
@@ -294,11 +294,11 @@ export const getGetDashboardSummaryQueryOptions = <
   TData = Awaited<ReturnType<typeof getDashboardSummary>>,
   TError = ErrorType<unknown>,
 >(options?: {
-  query?: UseQueryOptions<
+  query?: Partial<UseQueryOptions<
     Awaited<ReturnType<typeof getDashboardSummary>>,
     TError,
     TData
-  >;
+  >>;
   request?: SecondParameter<typeof customFetch>;
 }) => {
   const { query: queryOptions, request: requestOptions } = options ?? {};
@@ -329,11 +329,11 @@ export function useGetDashboardSummary<
   TData = Awaited<ReturnType<typeof getDashboardSummary>>,
   TError = ErrorType<unknown>,
 >(options?: {
-  query?: UseQueryOptions<
+  query?: Partial<UseQueryOptions<
     Awaited<ReturnType<typeof getDashboardSummary>>,
     TError,
     TData
-  >;
+  >>;
   request?: SecondParameter<typeof customFetch>;
 }): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
   const queryOptions = getGetDashboardSummaryQueryOptions(options);
@@ -384,11 +384,11 @@ export const getGetClientsQueryOptions = <
 >(
   params?: GetClientsParams,
   options?: {
-    query?: UseQueryOptions<
+    query?: Partial<UseQueryOptions<
       Awaited<ReturnType<typeof getClients>>,
       TError,
       TData
-    >;
+    >>;
     request?: SecondParameter<typeof customFetch>;
   },
 ) => {
@@ -422,11 +422,11 @@ export function useGetClients<
 >(
   params?: GetClientsParams,
   options?: {
-    query?: UseQueryOptions<
+    query?: Partial<UseQueryOptions<
       Awaited<ReturnType<typeof getClients>>,
       TError,
       TData
-    >;
+    >>;
     request?: SecondParameter<typeof customFetch>;
   },
 ): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
@@ -466,11 +466,11 @@ export const getGetClientProjectsQueryOptions = <
 >(
   id: string,
   options?: {
-    query?: UseQueryOptions<
+    query?: Partial<UseQueryOptions<
       Awaited<ReturnType<typeof getClientProjects>>,
       TError,
       TData
-    >;
+    >>;
     request?: SecondParameter<typeof customFetch>;
   },
 ) => {
@@ -509,11 +509,11 @@ export function useGetClientProjects<
 >(
   id: string,
   options?: {
-    query?: UseQueryOptions<
+    query?: Partial<UseQueryOptions<
       Awaited<ReturnType<typeof getClientProjects>>,
       TError,
       TData
-    >;
+    >>;
     request?: SecondParameter<typeof customFetch>;
   },
 ): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
@@ -550,11 +550,11 @@ export const getGetAllProjectsQueryOptions = <
   TData = Awaited<ReturnType<typeof getAllProjects>>,
   TError = ErrorType<unknown>,
 >(options?: {
-  query?: UseQueryOptions<
+  query?: Partial<UseQueryOptions<
     Awaited<ReturnType<typeof getAllProjects>>,
     TError,
     TData
-  >;
+  >>;
   request?: SecondParameter<typeof customFetch>;
 }) => {
   const { query: queryOptions, request: requestOptions } = options ?? {};
@@ -585,11 +585,11 @@ export function useGetAllProjects<
   TData = Awaited<ReturnType<typeof getAllProjects>>,
   TError = ErrorType<unknown>,
 >(options?: {
-  query?: UseQueryOptions<
+  query?: Partial<UseQueryOptions<
     Awaited<ReturnType<typeof getAllProjects>>,
     TError,
     TData
-  >;
+  >>;
   request?: SecondParameter<typeof customFetch>;
 }): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
   const queryOptions = getGetAllProjectsQueryOptions(options);
@@ -628,11 +628,11 @@ export const getGetProjectQueryOptions = <
 >(
   id: string,
   options?: {
-    query?: UseQueryOptions<
+    query?: Partial<UseQueryOptions<
       Awaited<ReturnType<typeof getProject>>,
       TError,
       TData
-    >;
+    >>;
     request?: SecondParameter<typeof customFetch>;
   },
 ) => {
@@ -671,11 +671,11 @@ export function useGetProject<
 >(
   id: string,
   options?: {
-    query?: UseQueryOptions<
+    query?: Partial<UseQueryOptions<
       Awaited<ReturnType<typeof getProject>>,
       TError,
       TData
-    >;
+    >>;
     request?: SecondParameter<typeof customFetch>;
   },
 ): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
@@ -715,11 +715,11 @@ export const getGetProjectPrestationsQueryOptions = <
 >(
   id: string,
   options?: {
-    query?: UseQueryOptions<
+    query?: Partial<UseQueryOptions<
       Awaited<ReturnType<typeof getProjectPrestations>>,
       TError,
       TData
-    >;
+    >>;
     request?: SecondParameter<typeof customFetch>;
   },
 ) => {
@@ -759,11 +759,11 @@ export function useGetProjectPrestations<
 >(
   id: string,
   options?: {
-    query?: UseQueryOptions<
+    query?: Partial<UseQueryOptions<
       Awaited<ReturnType<typeof getProjectPrestations>>,
       TError,
       TData
-    >;
+    >>;
     request?: SecondParameter<typeof customFetch>;
   },
 ): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
@@ -803,11 +803,11 @@ export const getGetPrestationQueryOptions = <
 >(
   id: string,
   options?: {
-    query?: UseQueryOptions<
+    query?: Partial<UseQueryOptions<
       Awaited<ReturnType<typeof getPrestation>>,
       TError,
       TData
-    >;
+    >>;
     request?: SecondParameter<typeof customFetch>;
   },
 ) => {
@@ -846,11 +846,11 @@ export function useGetPrestation<
 >(
   id: string,
   options?: {
-    query?: UseQueryOptions<
+    query?: Partial<UseQueryOptions<
       Awaited<ReturnType<typeof getPrestation>>,
       TError,
       TData
-    >;
+    >>;
     request?: SecondParameter<typeof customFetch>;
   },
 ): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
@@ -990,11 +990,11 @@ export const getGetAnalysisHistoryQueryOptions = <
 >(
   params?: GetAnalysisHistoryParams,
   options?: {
-    query?: UseQueryOptions<
+    query?: Partial<UseQueryOptions<
       Awaited<ReturnType<typeof getAnalysisHistory>>,
       TError,
       TData
-    >;
+    >>;
     request?: SecondParameter<typeof customFetch>;
   },
 ) => {
@@ -1029,11 +1029,11 @@ export function useGetAnalysisHistory<
 >(
   params?: GetAnalysisHistoryParams,
   options?: {
-    query?: UseQueryOptions<
+    query?: Partial<UseQueryOptions<
       Awaited<ReturnType<typeof getAnalysisHistory>>,
       TError,
       TData
-    >;
+    >>;
     request?: SecondParameter<typeof customFetch>;
   },
 ): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
@@ -1073,11 +1073,11 @@ export const getGetAnalysisQueryOptions = <
 >(
   id: string,
   options?: {
-    query?: UseQueryOptions<
+    query?: Partial<UseQueryOptions<
       Awaited<ReturnType<typeof getAnalysis>>,
       TError,
       TData
-    >;
+    >>;
     request?: SecondParameter<typeof customFetch>;
   },
 ) => {
@@ -1116,11 +1116,11 @@ export function useGetAnalysis<
 >(
   id: string,
   options?: {
-    query?: UseQueryOptions<
+    query?: Partial<UseQueryOptions<
       Awaited<ReturnType<typeof getAnalysis>>,
       TError,
       TData
-    >;
+    >>;
     request?: SecondParameter<typeof customFetch>;
   },
 ): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
@@ -1160,11 +1160,11 @@ export const getGetSourcesQueryOptions = <
 >(
   analysisId: string,
   options?: {
-    query?: UseQueryOptions<
+    query?: Partial<UseQueryOptions<
       Awaited<ReturnType<typeof getSources>>,
       TError,
       TData
-    >;
+    >>;
     request?: SecondParameter<typeof customFetch>;
   },
 ) => {
@@ -1203,11 +1203,11 @@ export function useGetSources<
 >(
   analysisId: string,
   options?: {
-    query?: UseQueryOptions<
+    query?: Partial<UseQueryOptions<
       Awaited<ReturnType<typeof getSources>>,
       TError,
       TData
-    >;
+    >>;
     request?: SecondParameter<typeof customFetch>;
   },
 ): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
@@ -1247,7 +1247,7 @@ export const getGetDiffQueryOptions = <
 >(
   analysisId: string,
   options?: {
-    query?: UseQueryOptions<Awaited<ReturnType<typeof getDiff>>, TError, TData>;
+    query?: Partial<UseQueryOptions<Awaited<ReturnType<typeof getDiff>>, TError, TData>>;
     request?: SecondParameter<typeof customFetch>;
   },
 ) => {
@@ -1284,7 +1284,7 @@ export function useGetDiff<
 >(
   analysisId: string,
   options?: {
-    query?: UseQueryOptions<Awaited<ReturnType<typeof getDiff>>, TError, TData>;
+    query?: Partial<UseQueryOptions<Awaited<ReturnType<typeof getDiff>>, TError, TData>>;
     request?: SecondParameter<typeof customFetch>;
   },
 ): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
@@ -1321,11 +1321,11 @@ export const getGetActivityQueryOptions = <
   TData = Awaited<ReturnType<typeof getActivity>>,
   TError = ErrorType<unknown>,
 >(options?: {
-  query?: UseQueryOptions<
+  query?: Partial<UseQueryOptions<
     Awaited<ReturnType<typeof getActivity>>,
     TError,
     TData
-  >;
+  >>;
   request?: SecondParameter<typeof customFetch>;
 }) => {
   const { query: queryOptions, request: requestOptions } = options ?? {};
@@ -1356,11 +1356,11 @@ export function useGetActivity<
   TData = Awaited<ReturnType<typeof getActivity>>,
   TError = ErrorType<unknown>,
 >(options?: {
-  query?: UseQueryOptions<
+  query?: Partial<UseQueryOptions<
     Awaited<ReturnType<typeof getActivity>>,
     TError,
     TData
-  >;
+  >>;
   request?: SecondParameter<typeof customFetch>;
 }): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
   const queryOptions = getGetActivityQueryOptions(options);
@@ -1396,11 +1396,11 @@ export const getGetPreferencesQueryOptions = <
   TData = Awaited<ReturnType<typeof getPreferences>>,
   TError = ErrorType<unknown>,
 >(options?: {
-  query?: UseQueryOptions<
+  query?: Partial<UseQueryOptions<
     Awaited<ReturnType<typeof getPreferences>>,
     TError,
     TData
-  >;
+  >>;
   request?: SecondParameter<typeof customFetch>;
 }) => {
   const { query: queryOptions, request: requestOptions } = options ?? {};
@@ -1431,11 +1431,11 @@ export function useGetPreferences<
   TData = Awaited<ReturnType<typeof getPreferences>>,
   TError = ErrorType<unknown>,
 >(options?: {
-  query?: UseQueryOptions<
+  query?: Partial<UseQueryOptions<
     Awaited<ReturnType<typeof getPreferences>>,
     TError,
     TData
-  >;
+  >>;
   request?: SecondParameter<typeof customFetch>;
 }): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
   const queryOptions = getGetPreferencesQueryOptions(options);
@@ -1557,11 +1557,11 @@ export const getGetAdminProfileQueryOptions = <
   TData = Awaited<ReturnType<typeof getAdminProfile>>,
   TError = ErrorType<unknown>,
 >(options?: {
-  query?: UseQueryOptions<
+  query?: Partial<UseQueryOptions<
     Awaited<ReturnType<typeof getAdminProfile>>,
     TError,
     TData
-  >;
+  >>;
   request?: SecondParameter<typeof customFetch>;
 }) => {
   const { query: queryOptions, request: requestOptions } = options ?? {};
@@ -1592,11 +1592,11 @@ export function useGetAdminProfile<
   TData = Awaited<ReturnType<typeof getAdminProfile>>,
   TError = ErrorType<unknown>,
 >(options?: {
-  query?: UseQueryOptions<
+  query?: Partial<UseQueryOptions<
     Awaited<ReturnType<typeof getAdminProfile>>,
     TError,
     TData
-  >;
+  >>;
   request?: SecondParameter<typeof customFetch>;
 }): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
   const queryOptions = getGetAdminProfileQueryOptions(options);

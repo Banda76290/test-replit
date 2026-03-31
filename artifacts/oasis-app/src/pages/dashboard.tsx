@@ -125,7 +125,7 @@ export default function DashboardPage() {
                         </div>
                         <p className="text-xs text-muted-foreground line-clamp-2 mb-3">{project.description}</p>
                         <div className="flex flex-wrap gap-1">
-                          {project.techStack.slice(0, 3).map(tech => (
+                          {(project.techStack ?? []).slice(0, 3).map(tech => (
                             <span key={tech} className="px-1.5 py-0.5 bg-muted rounded text-[10px] text-muted-foreground">
                               {tech}
                             </span>

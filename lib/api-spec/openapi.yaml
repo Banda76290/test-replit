@@ -461,7 +461,7 @@ components:
         recentProjects:
           type: array
           items:
-            $ref: "#/components/schemas/Project"
+            $ref: "#/components/schemas/Projet"
         recentAnalyses:
           type: array
           items:
@@ -526,6 +526,12 @@ components:
           type: string
         status:
           type: string
+        health:
+          type: string
+        techStack:
+          type: array
+          items:
+            type: string
         prestationCount:
           type: integer
         lastUpdated:

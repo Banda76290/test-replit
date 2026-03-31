@@ -103,7 +103,7 @@ export interface DashboardSummary {
   totalProjects: number;
   totalAnalyses: number;
   recentClients: Client[];
-  recentProjects: Project[];
+  recentProjects: Projet[];
   recentAnalyses: AnalysisResult[];
   recentActivities: Activity[];
   suggestedActions: DashboardSummarySuggestedActionsItem[];
@@ -116,6 +116,8 @@ export interface Projet {
   name: string;
   description?: string;
   status: string;
+  health?: string;
+  techStack?: string[];
   prestationCount: number;
   lastUpdated: string;
 }
