@@ -535,11 +535,13 @@ const MONACO_OPTIONS_BASE = {
   quickSuggestions: { other: true, comments: false, strings: false },
 };
 
-function CodeViewer({ file, onClose, prodUrl, saveUrl }: {
+function CodeViewer({ file, onClose, prodUrl, saveUrl, editContent, onEditChange }: {
   file: FileNode;
   onClose: () => void;
   prodUrl?: string | null;
   saveUrl?: string | null;
+  editContent: string;
+  onEditChange: (v: string) => void;
 }) {
   const [tab, setTab] = useState<"code" | "diff" | "edit">("code");
   const [copied, setCopied] = useState(false);
@@ -547,12 +549,7 @@ function CodeViewer({ file, onClose, prodUrl, saveUrl }: {
   const originalCode = useMemo(() => getMockCode(file.name), [file.name]);
   const saveCode = useMemo(() => getMockSaveCode(file.name), [file.name]);
   const language = useMemo(() => getMonacoLanguage(file.name), [file.name]);
-  const [editContent, setEditContent] = useState(originalCode);
   const isEdited = editContent !== originalCode;
-
-  useEffect(() => {
-    setEditContent(getMockCode(file.name));
-  }, [file.name]);
 
   const handleCopy = () => {
     const content = tab === "edit" ? editContent : originalCode;
@@ -567,7 +564,7 @@ function CodeViewer({ file, onClose, prodUrl, saveUrl }: {
     setTimeout(() => setSaved(false), 2500);
   };
 
-  const handleReset = () => setEditContent(originalCode);
+  const handleReset = () => onEditChange(originalCode);
 
   return (
     <div className="flex flex-col h-full bg-[#1e1e2e] rounded-xl border border-border/30 shadow-sm overflow-hidden">
@@ -656,7 +653,7 @@ function CodeViewer({ file, onClose, prodUrl, saveUrl }: {
             value={editContent}
             theme="vs-dark"
             options={{ ...MONACO_OPTIONS_BASE, readOnly: false }}
-            onChange={v => setEditContent(v ?? "")}
+            onChange={v => onEditChange(v ?? "")}
           />
         )}
         {tab === "diff" && (
@@ -906,8 +903,32 @@ export default function WorkspacePage() {
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [siteOpen, setSiteOpen] = useState(false);
   const [analysisOpen, setAnalysisOpen] = useState(false);
-  const [selectedFile, setSelectedFile] = useState<FileNode | null>(null);
+  const [openTabs, setOpenTabs] = useState<FileNode[]>([]);
+  const [activeFileId, setActiveFileId] = useState<string | null>(null);
+  const [editedContents, setEditedContents] = useState<Record<string, string>>({});
   const [allPrestationUrls, setAllPrestationUrls] = useState<{ url: string; type: "prod" | "save"; name: string }[]>([]);
+
+  const activeFile = openTabs.find(t => t.id === activeFileId) ?? null;
+
+  const handleFileSelect = (node: FileNode) => {
+    setOpenTabs(prev => prev.find(t => t.id === node.id) ? prev : [...prev, node]);
+    setActiveFileId(node.id);
+  };
+
+  const handleCloseTab = (fileId: string, e?: React.MouseEvent) => {
+    e?.stopPropagation();
+    setOpenTabs(prev => {
+      const idx = prev.findIndex(t => t.id === fileId);
+      const next = prev.filter(t => t.id !== fileId);
+      if (activeFileId === fileId && next.length > 0) {
+        setActiveFileId(next[Math.min(idx, next.length - 1)].id);
+      } else if (next.length === 0) {
+        setActiveFileId(null);
+      }
+      return next;
+    });
+    setEditedContents(prev => { const n = { ...prev }; delete n[fileId]; return n; });
+  };
 
   const siteRef = useRef<HTMLDivElement>(null);
   const analysisRef = useRef<HTMLDivElement>(null);
@@ -961,12 +982,20 @@ export default function WorkspacePage() {
       setSelectedUrl(urlInput.trim());
       setSiteOpen(false);
       setShowSuggestions(false);
-      setSelectedFile(null);
+      setOpenTabs([]);
+      setActiveFileId(null);
+      setEditedContents({});
     }
   }, [urlInput]);
 
   const handleSelectSuggestion = (url: string) => {
-    setUrlInput(url); setSelectedUrl(url); setShowSuggestions(false); setSiteOpen(false); setSelectedFile(null);
+    setUrlInput(url);
+    setSelectedUrl(url);
+    setShowSuggestions(false);
+    setSiteOpen(false);
+    setOpenTabs([]);
+    setActiveFileId(null);
+    setEditedContents({});
   };
 
   const handleRunAnalysis = async () => {
@@ -1199,18 +1228,58 @@ export default function WorkspacePage() {
               <FeedbackPanel analysisId={result.id} />
             </div>
           ) : fileTree ? (
-            <div className={cn("h-full flex gap-3 transition-all", selectedFile ? "flex-row" : "")}>
-              <div className={cn("h-full transition-all", selectedFile ? "w-[340px] shrink-0" : "w-full")}>
-                <FileExplorer tree={fileTree} onFileSelect={setSelectedFile} selectedFileId={selectedFile?.id} />
+            <div className={cn("h-full flex gap-3", openTabs.length > 0 ? "flex-row" : "")}>
+              {/* File explorer — fixed 260px when tabs open, full width otherwise */}
+              <div className={cn("h-full shrink-0 transition-all", openTabs.length > 0 ? "w-[260px]" : "w-full")}>
+                <FileExplorer tree={fileTree} onFileSelect={handleFileSelect} selectedFileId={activeFileId} />
               </div>
-              {selectedFile && (
-                <div className="flex-1 h-full min-w-0">
-                  <CodeViewer
-                    file={selectedFile}
-                    onClose={() => setSelectedFile(null)}
-                    prodUrl={prestation?.productionUrl ?? allPrestationUrls.find(e => e.url === selectedUrl && e.type === "prod")?.url ?? (selectedUrl ?? null)}
-                    saveUrl={prestation?.saveUrls?.[0] ?? allPrestationUrls.find(e => e.name === allPrestationUrls.find(e2 => e2.url === selectedUrl)?.name && e.type === "save")?.url ?? null}
-                  />
+
+              {/* Tab bar + editor */}
+              {openTabs.length > 0 && (
+                <div className="flex-1 h-full min-w-0 flex flex-col overflow-hidden rounded-xl border border-border/30 shadow-sm">
+                  {/* Tabs */}
+                  <div className="flex items-stretch bg-[#181825] border-b border-white/10 overflow-x-auto shrink-0 scrollbar-none">
+                    {openTabs.map(tab => {
+                      const isActive = tab.id === activeFileId;
+                      const isModified = editedContents[tab.id] !== undefined && editedContents[tab.id] !== getMockCode(tab.name);
+                      return (
+                        <button key={tab.id} onClick={() => setActiveFileId(tab.id)}
+                          className={cn(
+                            "flex items-center gap-2 px-3 py-2 text-xs font-mono whitespace-nowrap border-r border-white/10 group transition-colors min-w-0 max-w-[200px]",
+                            isActive
+                              ? "bg-[#1e1e2e] text-white/90 border-t-2 border-t-primary"
+                              : "text-white/40 hover:text-white/70 hover:bg-white/5"
+                          )}>
+                          <File className={cn("w-3 h-3 shrink-0", getFileIconColor(tab))} strokeWidth={1.5} />
+                          <span className="truncate">{tab.name}</span>
+                          {isModified && <span className="text-amber-400 shrink-0">●</span>}
+                          <span
+                            onClick={e => handleCloseTab(tab.id, e)}
+                            className={cn(
+                              "shrink-0 w-4 h-4 flex items-center justify-center rounded hover:bg-white/20 transition-colors",
+                              isActive ? "opacity-60 hover:opacity-100" : "opacity-0 group-hover:opacity-60 hover:!opacity-100"
+                            )}>
+                            <X className="w-2.5 h-2.5" />
+                          </span>
+                        </button>
+                      );
+                    })}
+                  </div>
+
+                  {/* Active editor */}
+                  {activeFile && (
+                    <div className="flex-1 min-h-0">
+                      <CodeViewer
+                        key={activeFile.id}
+                        file={activeFile}
+                        onClose={() => handleCloseTab(activeFile.id)}
+                        editContent={editedContents[activeFile.id] ?? getMockCode(activeFile.name)}
+                        onEditChange={v => setEditedContents(prev => ({ ...prev, [activeFile.id]: v }))}
+                        prodUrl={prestation?.productionUrl ?? allPrestationUrls.find(e => e.url === selectedUrl && e.type === "prod")?.url ?? (selectedUrl ?? null)}
+                        saveUrl={prestation?.saveUrls?.[0] ?? allPrestationUrls.find(e => e.name === allPrestationUrls.find(e2 => e2.url === selectedUrl)?.name && e.type === "save")?.url ?? null}
+                      />
+                    </div>
+                  )}
                 </div>
               )}
             </div>
