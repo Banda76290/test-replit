@@ -764,11 +764,14 @@ function CodeViewer({ file, onClose, prodUrl, saveUrl, editContent, onEditChange
     });
   };
 
-  const handleSave = () => {
+  const performSave = () => {
     setSavedAt(new Date());
     try {
       localStorage.setItem(`oasis_file_${file.id}`, editContent);
     } catch {}
+  };
+
+  const handleSave = () => {
     setSaveRapport(null);
     setSaveAnalyseRunning(false);
     setSaveAnalyseStep("");
@@ -919,7 +922,7 @@ function CodeViewer({ file, onClose, prodUrl, saveUrl, editContent, onEditChange
 
       {/* Modal analyse post-enregistrement */}
       {saveModalOpen && (
-        <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm" onClick={e => { if (e.target === e.currentTarget && !saveAnalyseRunning) setSaveModalOpen(false); }}>
+        <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
           <div className="bg-card border border-border rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col overflow-hidden">
 
             {/* Rapport en cours */}
@@ -977,6 +980,7 @@ function CodeViewer({ file, onClose, prodUrl, saveUrl, editContent, onEditChange
                       <div className="flex items-center gap-2 mb-1">
                         <Sparkles className="w-4 h-4 text-primary" />
                         <span className="text-sm font-bold text-foreground">Rapport d'analyse — {file.name}</span>
+                        <span className="text-[10px] bg-amber-500/20 text-amber-400 border border-amber-500/30 px-1.5 py-0.5 rounded-full font-medium ml-1 shrink-0">Non enregistré</span>
                       </div>
                       <p className="text-xs text-muted-foreground leading-relaxed">{saveRapport.resume}</p>
                     </div>
@@ -1157,9 +1161,18 @@ function CodeViewer({ file, onClose, prodUrl, saveUrl, editContent, onEditChange
                   )}
                 </div>
 
-                <div className="px-5 py-3 border-t border-border flex items-center justify-between shrink-0">
-                  <span className="text-xs text-muted-foreground">Analyse générée le {new Date().toLocaleDateString("fr-FR")} à {new Date().toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" })}</span>
-                  <Button size="sm" variant="outline" onClick={() => setSaveModalOpen(false)}>Fermer</Button>
+                <div className="px-5 py-3 border-t border-border shrink-0">
+                  <div className="flex items-center justify-between gap-3 flex-wrap">
+                    <span className="text-xs text-muted-foreground">Analyse générée le {new Date().toLocaleDateString("fr-FR")} à {new Date().toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" })}</span>
+                    <div className="flex items-center gap-2">
+                      <Button size="sm" variant="outline" onClick={() => setSaveModalOpen(false)}>
+                        <X className="w-3.5 h-3.5 mr-1.5" />Annuler l'enregistrement
+                      </Button>
+                      <Button size="sm" onClick={() => { performSave(); setSaveModalOpen(false); }}>
+                        <Save className="w-3.5 h-3.5 mr-1.5" />Confirmer l'enregistrement
+                      </Button>
+                    </div>
+                  </div>
                 </div>
               </>
             ) : (
@@ -1167,15 +1180,15 @@ function CodeViewer({ file, onClose, prodUrl, saveUrl, editContent, onEditChange
               <>
                 <div className="px-6 pt-6 pb-4 shrink-0">
                   <div className="flex items-start gap-4">
-                    <div className="w-10 h-10 rounded-xl bg-emerald-500/15 flex items-center justify-center shrink-0">
-                      <Save className="w-5 h-5 text-emerald-400" />
+                    <div className="w-10 h-10 rounded-xl bg-primary/15 flex items-center justify-center shrink-0">
+                      <Sparkles className="w-5 h-5 text-primary" />
                     </div>
                     <div>
-                      <h2 className="text-base font-bold text-foreground">Fichier enregistré</h2>
+                      <h2 className="text-base font-bold text-foreground">Analyse avant enregistrement</h2>
                       <p className="text-sm text-muted-foreground mt-0.5">
-                        <span className="font-mono text-xs text-foreground/70 bg-muted px-1.5 py-0.5 rounded">{file.name}</span> a été sauvegardé avec succès.
+                        <span className="font-mono text-xs text-foreground/70 bg-muted px-1.5 py-0.5 rounded">{file.name}</span> — les modifications ne sont pas encore enregistrées.
                       </p>
-                      <p className="text-sm text-muted-foreground mt-2">Souhaitez-vous lancer une analyse automatique des impacts de cette modification ?</p>
+                      <p className="text-sm text-muted-foreground mt-2">Souhaitez-vous analyser les impacts avant de confirmer l'enregistrement ?</p>
                     </div>
                   </div>
                 </div>
@@ -1213,7 +1226,7 @@ function CodeViewer({ file, onClose, prodUrl, saveUrl, editContent, onEditChange
                 </div>
 
                 <div className="px-6 py-4 border-t border-border flex items-center justify-end gap-2 shrink-0">
-                  <Button variant="ghost" size="sm" onClick={() => setSaveModalOpen(false)}>Ignorer</Button>
+                  <Button variant="ghost" size="sm" onClick={() => { performSave(); setSaveModalOpen(false); }}>Ignorer et enregistrer</Button>
                   <Button size="sm" onClick={handleLancerAnalyse} disabled={!saveAnalyseOpts.fonctionnelle && !saveAnalyseOpts.revueCode}>
                     <Sparkles className="w-3.5 h-3.5 mr-1.5" />Lancer l'analyse
                   </Button>
