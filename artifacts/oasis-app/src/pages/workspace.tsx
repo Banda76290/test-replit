@@ -917,16 +917,14 @@ export default function WorkspacePage() {
 
   const handleCloseTab = (fileId: string, e?: React.MouseEvent) => {
     e?.stopPropagation();
-    setOpenTabs(prev => {
-      const idx = prev.findIndex(t => t.id === fileId);
-      const next = prev.filter(t => t.id !== fileId);
-      if (activeFileId === fileId && next.length > 0) {
-        setActiveFileId(next[Math.min(idx, next.length - 1)].id);
-      } else if (next.length === 0) {
-        setActiveFileId(null);
-      }
-      return next;
-    });
+    const next = openTabs.filter(t => t.id !== fileId);
+    const idx = openTabs.findIndex(t => t.id === fileId);
+    let nextActiveId: string | null = activeFileId;
+    if (activeFileId === fileId) {
+      nextActiveId = next.length > 0 ? next[Math.min(idx, next.length - 1)].id : null;
+    }
+    setOpenTabs(next);
+    setActiveFileId(nextActiveId);
     setEditedContents(prev => { const n = { ...prev }; delete n[fileId]; return n; });
   };
 
