@@ -846,6 +846,7 @@ function InteractiveDiff({
   const deRef = useRef<any>(null);
   const oeRef = useRef<any>(null);
   const lhRef = useRef<number>(19);
+  const sepLeftRef = useRef<number | null>(null); // X position of separator between editors
 
   // Our computed hunks (for merge logic)
   const hunks = useMemo(() => computeHunks(original, modified), [original, modified]);
@@ -858,6 +859,7 @@ function InteractiveDiff({
     height: number;
     origStart: number;
   }>>([]);
+  const [sepLeft, setSepLeft] = useState<number | null>(null); // X of separator in px
 
   // Resolution state
   const [res, setRes] = useState<Record<string, HunkResolution>>({});
@@ -885,6 +887,12 @@ function InteractiveDiff({
       const monacoChanges: any[] = de.getLineChanges() || [];
       const scrollTop: number = oe.getScrollTop();
       const lh: number = lhRef.current;
+
+      // Compute the X of the separator between the two editors from layout
+      const layout = oe.getLayoutInfo();
+      const newSepLeft = layout.width;
+      sepLeftRef.current = newSepLeft;
+      setSepLeft(newSepLeft);
 
       const groups = monacoChanges.map((mc: any, i: number) => {
         const hunk = changedHunks[i];
@@ -942,11 +950,6 @@ function InteractiveDiff({
     };
   }, [language, original, modified, recomputePositions]);
 
-  // Scroll Monaco to a given line
-  const revealLine = (lineNo: number) => {
-    try { oeRef.current?.revealLineInCenter(lineNo); } catch {}
-  };
-
   return (
     <div className="flex flex-col h-full overflow-hidden">
       {/* Toolbar */}
@@ -997,61 +1000,48 @@ function InteractiveDiff({
       <div className="flex-1 min-h-0 relative">
         <div ref={containerRef} style={{ width: "100%", height: "100%" }} />
 
-        {/* Overlay: action buttons per diff hunk */}
+        {/* Overlay: arrow buttons per diff hunk, anchored to the Monaco separator */}
         <div className="absolute inset-0 pointer-events-none overflow-hidden" style={{ zIndex: 10 }}>
-          {btnGroups.map(group => {
+          {sepLeft !== null && btnGroups.map(group => {
             const hunk = changedHunks.find(h => h.id === group.hunkId);
             if (!hunk) return null;
             const r = res[group.hunkId] ?? "orig";
-            const isAccepted = r === "mod" || (Array.isArray(r) && (r as number[]).length > 0);
-            const isRejected = r === "orig";
+            const isAccepted = r === "mod";
 
-            // Center horizontally (between the two editors at ~50%)
+            const btnTop = Math.max(2, group.top + group.height / 2 - 18);
+
             return (
               <div
                 key={group.hunkId}
-                className="absolute pointer-events-auto"
-                style={{
-                  top: Math.max(4, group.top + group.height / 2 - 20),
-                  left: "50%",
-                  transform: "translateX(-50%)",
-                }}
-                onClick={() => revealLine(group.origStart)}
+                className="absolute pointer-events-auto flex flex-col gap-px"
+                style={{ top: btnTop, left: sepLeft - 14 }}
               >
-                <div className={cn(
-                  "flex flex-col shadow-xl rounded border overflow-hidden select-none",
-                  "bg-[#1a1a2e] border-white/20 backdrop-blur-sm"
-                )}>
-                  {/* Accept → */}
-                  <button
-                    onClick={e => { e.stopPropagation(); setRes(prev => ({ ...prev, [group.hunkId]: "mod" })); }}
-                    title="Accepter cette modification (Save → Production)"
-                    className={cn(
-                      "px-2.5 py-1 text-[10px] font-bold flex items-center gap-1.5 transition-all",
-                      isAccepted
-                        ? "bg-emerald-500/30 text-emerald-200"
-                        : "text-white/35 hover:bg-emerald-500/20 hover:text-emerald-200"
-                    )}
-                  >
-                    <ChevronRight className="w-3 h-3" />
-                    Accepter
-                  </button>
-                  <div className="h-px bg-white/10" />
-                  {/* Reject ← */}
-                  <button
-                    onClick={e => { e.stopPropagation(); setRes(prev => ({ ...prev, [group.hunkId]: "orig" })); }}
-                    title="Garder l'original (Production)"
-                    className={cn(
-                      "px-2.5 py-1 text-[10px] font-bold flex items-center gap-1.5 transition-all",
-                      isRejected
-                        ? "bg-red-500/25 text-red-200"
-                        : "text-white/35 hover:bg-red-500/15 hover:text-red-200"
-                    )}
-                  >
-                    <ChevronLeft className="w-3 h-3" />
-                    Garder
-                  </button>
-                </div>
+                {/* → accept */}
+                <button
+                  onClick={() => setRes(prev => ({ ...prev, [group.hunkId]: "mod" }))}
+                  title="Accepter cette modification →"
+                  className={cn(
+                    "w-7 h-7 flex items-center justify-center rounded text-[13px] font-bold transition-all shadow-md border",
+                    isAccepted
+                      ? "bg-emerald-500/40 text-emerald-200 border-emerald-500/60"
+                      : "bg-[#1e1e2e]/90 text-white/50 border-white/20 hover:bg-emerald-500/25 hover:text-emerald-200 hover:border-emerald-500/50"
+                  )}
+                >
+                  →
+                </button>
+                {/* ← keep */}
+                <button
+                  onClick={() => setRes(prev => ({ ...prev, [group.hunkId]: "orig" }))}
+                  title="Garder l'original ←"
+                  className={cn(
+                    "w-7 h-7 flex items-center justify-center rounded text-[13px] font-bold transition-all shadow-md border",
+                    !isAccepted
+                      ? "bg-red-500/30 text-red-200 border-red-500/50"
+                      : "bg-[#1e1e2e]/90 text-white/50 border-white/20 hover:bg-red-500/20 hover:text-red-200 hover:border-red-500/40"
+                  )}
+                >
+                  ←
+                </button>
               </div>
             );
           })}
