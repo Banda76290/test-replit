@@ -827,6 +827,7 @@ export default function WorkspacePage() {
   const [siteOpen, setSiteOpen] = useState(false);
   const [analysisOpen, setAnalysisOpen] = useState(false);
   const [selectedFile, setSelectedFile] = useState<FileNode | null>(null);
+  const [allPrestationUrls, setAllPrestationUrls] = useState<{ url: string; type: "prod" | "save"; name: string }[]>([]);
 
   const siteRef = useRef<HTMLDivElement>(null);
   const analysisRef = useRef<HTMLDivElement>(null);
@@ -834,8 +835,33 @@ export default function WorkspacePage() {
 
   const availableUrls: string[] = prestation
     ? [prestation.productionUrl, ...(prestation.saveUrls || [])].filter(Boolean)
-    : [];
+    : allPrestationUrls.map(e => e.url);
   const filteredSuggestions = availableUrls.filter(u => u.toLowerCase().includes(urlInput.toLowerCase()));
+
+  useEffect(() => {
+    if (!prestationId) {
+      fetch("/api/prestations", { credentials: "include" })
+        .then(r => r.json())
+        .then((data: Array<{ productionUrl?: string; saveUrls?: string[]; name: string }>) => {
+          const entries: { url: string; type: "prod" | "save"; name: string }[] = [];
+          const seen = new Set<string>();
+          for (const p of data) {
+            if (p.productionUrl && !seen.has(p.productionUrl)) {
+              entries.push({ url: p.productionUrl, type: "prod", name: p.name });
+              seen.add(p.productionUrl);
+            }
+            for (const u of p.saveUrls || []) {
+              if (!seen.has(u)) {
+                entries.push({ url: u, type: "save", name: p.name });
+                seen.add(u);
+              }
+            }
+          }
+          setAllPrestationUrls(entries);
+        })
+        .catch(() => {});
+    }
+  }, [prestationId]);
 
   useEffect(() => {
     if (prestation?.productionUrl && !urlInput) setUrlInput(prestation.productionUrl);
@@ -946,20 +972,24 @@ export default function WorkspacePage() {
                         autoFocus
                       />
                       {showSuggestions && filteredSuggestions.length > 0 && (
-                        <div className="absolute top-full left-0 right-0 mt-1 bg-card border border-border rounded-lg shadow-lg z-50 overflow-hidden">
-                          {filteredSuggestions.map(url => (
-                            <button key={url} onMouseDown={e => { e.preventDefault(); handleSelectSuggestion(url); }}
-                              className="w-full flex items-center gap-2 px-3 py-2.5 text-sm text-left hover:bg-muted/60 transition-colors border-b border-border/30 last:border-0">
-                              <Globe className="w-3.5 h-3.5 text-primary shrink-0" />
-                              <span className="truncate">{url}</span>
-                              {url === prestation?.productionUrl && (
-                                <span className="shrink-0 text-[10px] bg-emerald-50 text-emerald-700 border border-emerald-200 px-1.5 py-0.5 rounded-full font-medium">Prod</span>
-                              )}
-                              {prestation?.saveUrls?.includes(url) && (
-                                <span className="shrink-0 text-[10px] bg-amber-50 text-amber-700 border border-amber-200 px-1.5 py-0.5 rounded-full font-medium">Save</span>
-                              )}
-                            </button>
-                          ))}
+                        <div className="absolute top-full left-0 right-0 mt-1 bg-card border border-border rounded-lg shadow-lg z-50 overflow-hidden max-h-56 overflow-y-auto">
+                          {filteredSuggestions.map(url => {
+                            const isProd = prestation ? url === prestation.productionUrl : allPrestationUrls.find(e => e.url === url)?.type === "prod";
+                            const isSave = prestation ? prestation.saveUrls?.includes(url) : allPrestationUrls.find(e => e.url === url)?.type === "save";
+                            const prestName = !prestation ? allPrestationUrls.find(e => e.url === url)?.name : null;
+                            return (
+                              <button key={url} onMouseDown={e => { e.preventDefault(); handleSelectSuggestion(url); }}
+                                className="w-full flex items-center gap-2 px-3 py-2.5 text-sm text-left hover:bg-muted/60 transition-colors border-b border-border/30 last:border-0">
+                                <Globe className="w-3.5 h-3.5 text-primary shrink-0" />
+                                <div className="flex-1 min-w-0">
+                                  <div className="truncate text-foreground/90">{url}</div>
+                                  {prestName && <div className="text-[11px] text-muted-foreground truncate mt-0.5">{prestName}</div>}
+                                </div>
+                                {isProd && <span className="shrink-0 text-[10px] bg-emerald-50 text-emerald-700 border border-emerald-200 px-1.5 py-0.5 rounded-full font-medium">Prod</span>}
+                                {isSave && <span className="shrink-0 text-[10px] bg-amber-50 text-amber-700 border border-amber-200 px-1.5 py-0.5 rounded-full font-medium">Save</span>}
+                              </button>
+                            );
+                          })}
                         </div>
                       )}
                     </div>
