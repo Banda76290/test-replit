@@ -1797,9 +1797,8 @@ export default function WorkspacePage() {
 
   const handleLancerDocAnalyse = async () => {
     setDocAnalyseRunning(true);
-    const docName = tcResult?.code ?? uploadedFile?.name ?? "document";
     const steps = [
-      `Analyse du document — ${docName}…`,
+      "Analyse du document de travail dans le contexte du projet…",
       "Interrogation Freshdesk — service client…",
       "Analyse Pipedrive — données commerciales…",
       "Consultation Trackobug — tickets TK…",
@@ -1831,6 +1830,13 @@ export default function WorkspacePage() {
     setDocCodeGenDone(true);
     setDocAnalyseOpen(false);
   };
+
+  useEffect(() => {
+    if (docAnalyseOpen && !docAnalyseRunning && !docRapport && !docCodeGenRunning) {
+      handleLancerDocAnalyse();
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [docAnalyseOpen]);
 
   const handleSearch = useCallback(() => {
     if (urlInput.trim()) {
@@ -2412,14 +2418,14 @@ export default function WorkspacePage() {
                 </div>
                 <div className="flex flex-col gap-1.5 w-full max-w-xs">
                   {[
-                    { label: tcResult ? tcResult.code : (uploadedFile?.name ?? "Document"), icon: tcResult ? Hash : FileUp },
+                    { label: "Analyse dans le contexte du projet", icon: tcResult ? Hash : FileUp },
                     { label: "Freshdesk", icon: MessageSquare },
                     { label: "Pipedrive", icon: Briefcase },
                     { label: "Trackobug", icon: Bug },
                     { label: "Timelines PRE/TC", icon: CalendarDays },
                     { label: "Synthèse des impacts", icon: TrendingUp },
                   ].map((s, i) => {
-                    const stepMap = ["Analyse du document", "Interrogation Freshdesk", "Analyse Pipedrive", "Consultation Trackobug", "Lecture Timelines", "Synthèse"];
+                    const stepMap = ["Analyse du document de travail", "Interrogation Freshdesk", "Analyse Pipedrive", "Consultation Trackobug", "Lecture Timelines", "Synthèse"];
                     const isDone = stepMap.slice(i + 1).some(x => docAnalyseStep.startsWith(x));
                     const isActive = docAnalyseStep.startsWith(stepMap[i]);
                     return (
@@ -2460,7 +2466,7 @@ export default function WorkspacePage() {
                       <div className="flex items-center gap-2 mb-1">
                         <FileText className="w-4 h-4 text-primary" />
                         <span className="text-sm font-bold text-foreground">
-                          Rapport d'analyse — {tcResult ? tcResult.code : uploadedFile?.name}
+                          Rapport d'analyse du document de travail — {tcResult ? tcResult.code : uploadedFile?.name}
                         </span>
                       </div>
                       <p className="text-xs text-muted-foreground leading-relaxed">{docRapport.resume}</p>
@@ -2591,45 +2597,7 @@ export default function WorkspacePage() {
                   </div>
                 </div>
               </>
-            ) : (
-              /* Prompt initial doc */
-              <>
-                <div className="px-6 pt-6 pb-4 shrink-0">
-                  <div className="flex items-start gap-4">
-                    <div className="w-10 h-10 rounded-xl bg-primary/15 flex items-center justify-center shrink-0">
-                      {tcResult ? <Hash className="w-5 h-5 text-primary" /> : <FileText className="w-5 h-5 text-primary" />}
-                    </div>
-                    <div>
-                      <h2 className="text-base font-bold text-foreground">Analyse du document de travail</h2>
-                      <p className="text-sm text-muted-foreground mt-0.5">
-                        {tcResult ? (
-                          <><span className="font-mono text-xs text-foreground/70 bg-muted px-1.5 py-0.5 rounded">{tcResult.code}</span> — {tcResult.titre}</>
-                        ) : (
-                          <><span className="font-mono text-xs text-foreground/70 bg-muted px-1.5 py-0.5 rounded">{uploadedFile?.name}</span> a été importé</>
-                        )}
-                      </p>
-                      <p className="text-sm text-muted-foreground mt-2">
-                        L'analyse va interroger les sources RAG (Freshdesk, Pipedrive, Trackobug, Timelines PRE/TC) pour évaluer les interactions et impacts métier.
-                      </p>
-                    </div>
-                  </div>
-                </div>
-                <div className="px-6 pb-2 space-y-2 shrink-0">
-                  <div className="flex items-center gap-3 p-3 bg-muted/30 rounded-xl border border-border/40 text-xs text-muted-foreground">
-                    <MessageSquare className="w-4 h-4 text-blue-500 shrink-0" /><span>Service client — Freshdesk</span>
-                    <Briefcase className="w-4 h-4 text-orange-500 shrink-0 ml-3" /><span>Commercial — Pipedrive</span>
-                    <Bug className="w-4 h-4 text-red-500 shrink-0 ml-3" /><span>Trackobug</span>
-                    <CalendarDays className="w-4 h-4 text-violet-500 shrink-0 ml-3" /><span>Timelines PRE/TC</span>
-                  </div>
-                </div>
-                <div className="px-6 py-4 border-t border-border flex items-center justify-end gap-2 shrink-0">
-                  <Button variant="ghost" size="sm" onClick={() => setDocAnalyseOpen(false)}>Fermer</Button>
-                  <Button size="sm" onClick={handleLancerDocAnalyse}>
-                    <Sparkles className="w-3.5 h-3.5 mr-1.5" />Lancer l'analyse
-                  </Button>
-                </div>
-              </>
-            )}
+            ) : null}
           </div>
         </div>
       )}
