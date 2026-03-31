@@ -12,7 +12,10 @@ import {
   SortAsc, Filter, Home, ExternalLink, RefreshCw, Settings2,
   X, GitBranch, Code2, Copy, Check, Pencil, RotateCcw, Save,
   AlertCircle, Clock, ZapOff, ChevronLeft,
-  Maximize2, Minimize2, Upload, Hash, FileUp, FolderSearch
+  Maximize2, Minimize2, Upload, Hash, FileUp, FolderSearch,
+  MessageSquare, Briefcase, Bug, CalendarDays, BarChart2,
+  TrendingUp, ShieldAlert, ShieldCheck, Info, ChevronRight,
+  Zap, Users, Link2, CheckSquare
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -67,6 +70,76 @@ type FileNode = {
   modified?: string;
   children?: FileNode[];
 };
+
+type AnalyseRapport = {
+  resume: string;
+  scoreImpact: number;
+  fonctionnelle: {
+    freshdeskTickets: Array<{ id: string; titre: string; statut: string; priorite: string; lien: string; impact: string }>;
+    pipedriveDeals: Array<{ id: string; titre: string; valeur: string; statut: string; contact: string; impact: string }>;
+    trackobugTK: Array<{ id: string; titre: string; type: string; statut: string; assignee: string; impact: string }>;
+    timelines: Array<{ ref: string; type: "PRE" | "TC"; titre: string; echeance: string; avancement: number; impact: string }>;
+  };
+  revueCode: {
+    problemes: Array<{ gravite: "critique" | "majeur" | "mineur" | "info"; ligne: number; message: string; suggestion: string }>;
+    scoreQualite: number;
+    points: string[];
+  };
+};
+
+function genererRapportMock(fileName: string, editedContent: string): AnalyseRapport {
+  const n = fileName.toLowerCase();
+  const isCart = n.includes("cart");
+  const isCheckout = n.includes("checkout");
+  const isOrder = n.includes("order");
+  const isProd = n.includes("product");
+  const lignes = editedContent.split("\n").length;
+
+  return {
+    resume: isCart
+      ? `La modification du gestionnaire de panier impacte directement le tunnel d'achat. ${lignes} lignes analysées. Des interactions critiques détectées avec le service client (12 tickets Freshdesk ouverts liés au panier), 2 opportunités commerciales Pipedrive en cours, et 5 TK Trackobug actifs sur ce périmètre.`
+      : isCheckout
+      ? `Les changements sur le contrôleur de checkout affectent le processus de commande complet. ${lignes} lignes analysées. Impact détecté sur 8 tickets Freshdesk, 3 deals Pipedrive à risque, et 3 tâches TC en cours sur ce module.`
+      : `Analyse des modifications sur ${fileName} (${lignes} lignes). Impact modéré détecté — aucune régression critique identifiée. Vérification des dépendances effectuée via les sources RAG.`,
+    scoreImpact: isCart ? 78 : isCheckout ? 65 : isProd ? 52 : 35,
+    fonctionnelle: {
+      freshdeskTickets: [
+        { id: isCart ? "FD-14823" : "FD-14790", titre: isCart ? "Erreur de calcul des frais de port lors d'un ajout multiple" : "Page de confirmation commande — affichage incorrect", statut: "Ouvert", priorite: "Haute", lien: "#", impact: "Correction directe apportée par cette modification" },
+        { id: isCart ? "FD-14756" : "FD-14710", titre: isCart ? "Le coupon de réduction ne s'applique pas sur le panier mobile" : "Délai de traitement commande anormalement long", statut: "En attente", priorite: "Normale", lien: "#", impact: "Impact indirect — surveiller après déploiement" },
+        { id: "FD-14694", titre: "Question client : remboursement suite à double commande", statut: "Résolu", priorite: "Basse", lien: "#", impact: "Aucun impact — historique uniquement" },
+      ],
+      pipedriveDeals: [
+        { id: "DEAL-2891", titre: "Boutique Example — Contrat maintenance premium", valeur: "4 800 €/an", statut: "Actif", contact: "Marie Leblanc", impact: "Ce client est directement affecté — notifier le commercial avant déploiement" },
+        { id: "DEAL-3012", titre: "Maison Déco — Extension module panier", valeur: "1 200 €", statut: "Proposition envoyée", contact: "Thomas Garnier", impact: "Fonctionnalité concernée par cette évolution — opportunité de démonstration" },
+      ],
+      trackobugTK: [
+        { id: isCart ? "TK-2025-047" : "TK-2025-031", titre: isCart ? "Bug panier — calcul TVA incorrect en mode invité" : "Checkout — Paiement en 3x non proposé sur mobile", type: "Bug", statut: "En cours", assignee: "Jean-Pierre M.", impact: "Cette modification corrige partiellement ce ticket" },
+        { id: "TK-2025-038", titre: "Performance — Temps de réponse panier > 3s", type: "Performance", statut: "A faire", assignee: "Sophie L.", impact: "La modification peut améliorer ce point" },
+        { id: "TK-2025-019", titre: "Sécurité — Validation des entrées formulaire", type: "Sécurité", statut: "En cours", assignee: "Ahmed B.", impact: "À vérifier : les nouvelles lignes respectent les règles de validation" },
+      ],
+      timelines: [
+        { ref: "PRE-2025-003", type: "PRE", titre: "Migration PS 1.7 → 8.x — Phase 2 : Modules core", echeance: "15/04/2026", avancement: 62, impact: "Cette modification s'inscrit dans le périmètre de cette prestation" },
+        { ref: "TC-2025-001", type: "TC", titre: "Correction bug panier — calcul des frais de port", echeance: "02/04/2026", avancement: 85, impact: "Modification directement liée à cette tâche — avancement à mettre à jour" },
+        { ref: "TC-2025-005", type: "TC", titre: "Migration base de données PS 1.6 vers 1.7", echeance: "10/04/2026", avancement: 40, impact: "Dépendance indirecte — à surveiller lors de la recette" },
+      ],
+    },
+    revueCode: {
+      scoreQualite: isCart ? 71 : 82,
+      problemes: [
+        { gravite: "majeur" as const, ligne: Math.floor(lignes * 0.3), message: "Absence de vérification du type de retour sur getProducts()", suggestion: "Ajouter une vérification explicite : if (!is_array($products)) return [];" },
+        { gravite: "mineur" as const, ligne: Math.floor(lignes * 0.6), message: "Variable $id_order utilisée sans initialisation par défaut", suggestion: "Initialiser à null et vérifier avant utilisation" },
+        { gravite: "info" as const, ligne: Math.floor(lignes * 0.8), message: "Commentaire TODO en attente depuis > 30 jours", suggestion: "Implémenter ou supprimer le commentaire TODO orphelin" },
+        ...(isCart ? [{ gravite: "critique" as const, ligne: Math.floor(lignes * 0.15), message: "Requête SQL sans préparation des paramètres", suggestion: "Utiliser Db::getInstance()->execute() avec des paramètres préparés pour éviter les injections SQL" }] : []),
+      ],
+      points: [
+        "Structure de classe cohérente avec les conventions PrestaShop",
+        "Bonne séparation des responsabilités dans les méthodes",
+        "Gestion du cache bien implémentée avec les flags de rafraîchissement",
+        ...(isCart ? [] : ["Pas de dette technique majeure détectée sur ce fichier"]),
+      ],
+    },
+  };
+}
 
 function f(name: string, modified = "28/03/2026", size?: string): FileNode {
   return { id: name, name, type: "file", ext: name.includes(".") ? name.split(".").pop() : undefined, modified, size: size || `${Math.floor(Math.random() * 90 + 10)} Ko` };
@@ -639,6 +712,13 @@ function CodeViewer({ file, onClose, prodUrl, saveUrl, editContent, onEditChange
   const editorRef = useRef<any>(null);
   const monacoRef = useRef<any>(null);
   const diffEditorRef = useRef<any>(null);
+
+  const [saveModalOpen, setSaveModalOpen] = useState(false);
+  const [saveAnalyseOpts, setSaveAnalyseOpts] = useState({ fonctionnelle: true, revueCode: true });
+  const [saveAnalyseRunning, setSaveAnalyseRunning] = useState(false);
+  const [saveAnalyseStep, setSaveAnalyseStep] = useState("");
+  const [saveRapport, setSaveRapport] = useState<AnalyseRapport | null>(null);
+  const [rapportTab, setRapportTab] = useState<"fonctionnelle" | "revueCode">("fonctionnelle");
   const originalCode = useMemo(() => getMockCode(file.name), [file.name]);
   const saveCode = useMemo(() => getMockSaveCode(file.name), [file.name]);
   const language = useMemo(() => getMonacoLanguage(file.name), [file.name]);
@@ -689,6 +769,31 @@ function CodeViewer({ file, onClose, prodUrl, saveUrl, editContent, onEditChange
     try {
       localStorage.setItem(`oasis_file_${file.id}`, editContent);
     } catch {}
+    setSaveRapport(null);
+    setSaveAnalyseRunning(false);
+    setSaveAnalyseStep("");
+    setSaveModalOpen(true);
+  };
+
+  const handleLancerAnalyse = async () => {
+    setSaveAnalyseRunning(true);
+    const steps = [
+      "Interrogation Freshdesk — service client…",
+      "Analyse Pipedrive — données commerciales…",
+      "Consultation Trackobug — tickets TK…",
+      "Lecture Timelines PRE & TC — outil interne…",
+      "Analyse fonctionnelle du code modifié…",
+      "Génération du rapport de revue…",
+    ];
+    for (const step of steps) {
+      setSaveAnalyseStep(step);
+      await new Promise(r => setTimeout(r, 520));
+    }
+    const rapport = genererRapportMock(file.name, editContent);
+    setSaveRapport(rapport);
+    setSaveAnalyseRunning(false);
+    setSaveAnalyseStep("");
+    setRapportTab("fonctionnelle");
   };
 
   const handleReset = () => {
@@ -811,6 +916,313 @@ function CodeViewer({ file, onClose, prodUrl, saveUrl, editContent, onEditChange
           />
         )}
       </div>
+
+      {/* Modal analyse post-enregistrement */}
+      {saveModalOpen && (
+        <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm" onClick={e => { if (e.target === e.currentTarget && !saveAnalyseRunning) setSaveModalOpen(false); }}>
+          <div className="bg-card border border-border rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col overflow-hidden">
+
+            {/* Rapport en cours */}
+            {saveAnalyseRunning ? (
+              <div className="flex-1 flex flex-col items-center justify-center gap-6 p-10">
+                <div className="relative w-16 h-16">
+                  <div className="absolute inset-0 rounded-full border-4 border-primary/20" />
+                  <div className="absolute inset-0 rounded-full border-4 border-t-primary border-r-transparent border-b-transparent border-l-transparent animate-spin" />
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <Sparkles className="w-6 h-6 text-primary" />
+                  </div>
+                </div>
+                <div className="text-center space-y-1">
+                  <p className="text-sm font-semibold text-foreground">Analyse en cours…</p>
+                  <p className="text-xs text-muted-foreground animate-pulse">{saveAnalyseStep}</p>
+                </div>
+                <div className="flex flex-col gap-1.5 w-full max-w-xs">
+                  {[
+                    { label: "Freshdesk", icon: MessageSquare },
+                    { label: "Pipedrive", icon: Briefcase },
+                    { label: "Trackobug", icon: Bug },
+                    { label: "Timelines PRE/TC", icon: CalendarDays },
+                    { label: "Analyse fonctionnelle", icon: TrendingUp },
+                    { label: "Revue de code", icon: ShieldCheck },
+                  ].map((s, i) => {
+                    const isDone = saveAnalyseStep && [
+                      "Analyse Pipedrive", "Consultation Trackobug", "Lecture Timelines", "Analyse fonctionnelle", "Génération du rapport",
+                    ].some(x => saveAnalyseStep.startsWith(x)) && i === 0
+                      ? true : ["Consultation Trackobug", "Lecture Timelines", "Analyse fonctionnelle", "Génération du rapport"].some(x => saveAnalyseStep.startsWith(x)) && i <= 1
+                      ? true : ["Lecture Timelines", "Analyse fonctionnelle", "Génération du rapport"].some(x => saveAnalyseStep.startsWith(x)) && i <= 2
+                      ? true : ["Analyse fonctionnelle", "Génération du rapport"].some(x => saveAnalyseStep.startsWith(x)) && i <= 3
+                      ? true : ["Génération du rapport"].some(x => saveAnalyseStep.startsWith(x)) && i <= 4
+                      ? true : false;
+                    const isActive = (i === 0 && saveAnalyseStep.startsWith("Interrogation Freshdesk"))
+                      || (i === 1 && saveAnalyseStep.startsWith("Analyse Pipedrive"))
+                      || (i === 2 && saveAnalyseStep.startsWith("Consultation Trackobug"))
+                      || (i === 3 && saveAnalyseStep.startsWith("Lecture Timelines"))
+                      || (i === 4 && saveAnalyseStep.startsWith("Analyse fonctionnelle"))
+                      || (i === 5 && saveAnalyseStep.startsWith("Génération"));
+                    return (
+                      <div key={s.label} className={cn("flex items-center gap-2.5 px-3 py-1.5 rounded-lg text-xs transition-all", isActive ? "bg-primary/10 text-primary" : isDone ? "text-emerald-600 dark:text-emerald-400" : "text-muted-foreground")}>
+                        {isDone ? <Check className="w-3.5 h-3.5 shrink-0" /> : isActive ? <Loader2 className="w-3.5 h-3.5 shrink-0 animate-spin" /> : <s.icon className="w-3.5 h-3.5 shrink-0 opacity-40" />}
+                        {s.label}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            ) : saveRapport ? (
+              /* Rapport généré */
+              <>
+                <div className="px-6 py-4 border-b border-border shrink-0">
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 mb-1">
+                        <Sparkles className="w-4 h-4 text-primary" />
+                        <span className="text-sm font-bold text-foreground">Rapport d'analyse — {file.name}</span>
+                      </div>
+                      <p className="text-xs text-muted-foreground leading-relaxed">{saveRapport.resume}</p>
+                    </div>
+                    <div className="shrink-0 flex flex-col items-center">
+                      <div className={cn("w-14 h-14 rounded-full flex items-center justify-center border-2 text-sm font-bold",
+                        saveRapport.scoreImpact >= 70 ? "border-red-400 text-red-500 bg-red-50 dark:bg-red-950/20" : saveRapport.scoreImpact >= 50 ? "border-amber-400 text-amber-600 bg-amber-50 dark:bg-amber-950/20" : "border-emerald-400 text-emerald-600 bg-emerald-50 dark:bg-emerald-950/20")}>
+                        {saveRapport.scoreImpact}
+                      </div>
+                      <span className="text-[10px] text-muted-foreground mt-1">Score impact</span>
+                    </div>
+                  </div>
+
+                  {/* Onglets rapport */}
+                  <div className="flex gap-1 mt-3">
+                    {saveAnalyseOpts.fonctionnelle && (
+                      <button onClick={() => setRapportTab("fonctionnelle")}
+                        className={cn("flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-colors", rapportTab === "fonctionnelle" ? "bg-primary/10 text-primary" : "text-muted-foreground hover:text-foreground hover:bg-muted/50")}>
+                        <TrendingUp className="w-3 h-3" />Analyse fonctionnelle
+                      </button>
+                    )}
+                    {saveAnalyseOpts.revueCode && (
+                      <button onClick={() => setRapportTab("revueCode")}
+                        className={cn("flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-colors", rapportTab === "revueCode" ? "bg-primary/10 text-primary" : "text-muted-foreground hover:text-foreground hover:bg-muted/50")}>
+                        <ShieldCheck className="w-3 h-3" />Revue de code
+                      </button>
+                    )}
+                  </div>
+                </div>
+
+                <div className="flex-1 overflow-y-auto">
+                  {rapportTab === "fonctionnelle" && (
+                    <div className="p-5 space-y-5">
+                      {/* Freshdesk */}
+                      <div>
+                        <div className="flex items-center gap-2 mb-2.5">
+                          <MessageSquare className="w-3.5 h-3.5 text-blue-500" />
+                          <span className="text-xs font-semibold text-foreground">Service client — Freshdesk</span>
+                          <span className="ml-auto text-[10px] text-muted-foreground">{saveRapport.fonctionnelle.freshdeskTickets.length} ticket(s) liés</span>
+                        </div>
+                        <div className="space-y-1.5">
+                          {saveRapport.fonctionnelle.freshdeskTickets.map(t => (
+                            <div key={t.id} className="flex items-start gap-2.5 p-2.5 bg-muted/30 rounded-lg border border-border/40">
+                              <span className="text-[10px] font-mono text-primary shrink-0 mt-0.5">{t.id}</span>
+                              <div className="flex-1 min-w-0">
+                                <p className="text-xs font-medium text-foreground truncate">{t.titre}</p>
+                                <p className="text-[11px] text-muted-foreground mt-0.5 leading-relaxed">{t.impact}</p>
+                              </div>
+                              <div className="flex flex-col items-end gap-1 shrink-0">
+                                <span className={cn("text-[10px] border px-1.5 py-0.5 rounded-full font-medium", t.statut === "Ouvert" ? "bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-950/20 dark:text-blue-400 dark:border-blue-800" : t.statut === "En attente" ? "bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/20 dark:text-amber-400 dark:border-amber-800" : "bg-muted text-muted-foreground border-border")}>{t.statut}</span>
+                                <span className={cn("text-[10px]", t.priorite === "Haute" ? "text-red-500" : "text-muted-foreground")}>{t.priorite}</span>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+
+                      {/* Pipedrive */}
+                      <div>
+                        <div className="flex items-center gap-2 mb-2.5">
+                          <Briefcase className="w-3.5 h-3.5 text-orange-500" />
+                          <span className="text-xs font-semibold text-foreground">Commercial — Pipedrive</span>
+                          <span className="ml-auto text-[10px] text-muted-foreground">{saveRapport.fonctionnelle.pipedriveDeals.length} deal(s) liés</span>
+                        </div>
+                        <div className="space-y-1.5">
+                          {saveRapport.fonctionnelle.pipedriveDeals.map(d => (
+                            <div key={d.id} className="flex items-start gap-2.5 p-2.5 bg-muted/30 rounded-lg border border-border/40">
+                              <span className="text-[10px] font-mono text-orange-500 shrink-0 mt-0.5">{d.id}</span>
+                              <div className="flex-1 min-w-0">
+                                <p className="text-xs font-medium text-foreground truncate">{d.titre}</p>
+                                <p className="text-[11px] text-muted-foreground mt-0.5 leading-relaxed">{d.impact}</p>
+                                <p className="text-[11px] text-muted-foreground mt-0.5"><span className="font-medium text-foreground/60">Contact :</span> {d.contact} · {d.valeur}</p>
+                              </div>
+                              <span className={cn("text-[10px] border px-1.5 py-0.5 rounded-full font-medium shrink-0 mt-0.5", d.statut === "Actif" ? "bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/20 dark:text-emerald-400 dark:border-emerald-800" : "bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-950/20 dark:text-blue-400 dark:border-blue-800")}>{d.statut}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+
+                      {/* Trackobug */}
+                      <div>
+                        <div className="flex items-center gap-2 mb-2.5">
+                          <Bug className="w-3.5 h-3.5 text-red-500" />
+                          <span className="text-xs font-semibold text-foreground">Tickets — Trackobug</span>
+                          <span className="ml-auto text-[10px] text-muted-foreground">{saveRapport.fonctionnelle.trackobugTK.length} TK liés</span>
+                        </div>
+                        <div className="space-y-1.5">
+                          {saveRapport.fonctionnelle.trackobugTK.map(tk => (
+                            <div key={tk.id} className="flex items-start gap-2.5 p-2.5 bg-muted/30 rounded-lg border border-border/40">
+                              <span className="text-[10px] font-mono text-red-500 shrink-0 mt-0.5">{tk.id}</span>
+                              <div className="flex-1 min-w-0">
+                                <p className="text-xs font-medium text-foreground truncate">{tk.titre}</p>
+                                <p className="text-[11px] text-muted-foreground mt-0.5 leading-relaxed">{tk.impact}</p>
+                                <p className="text-[11px] text-muted-foreground mt-0.5"><span className="font-medium text-foreground/60">Assigné :</span> {tk.assignee}</p>
+                              </div>
+                              <div className="flex flex-col items-end gap-1 shrink-0">
+                                <span className={cn("text-[10px] border px-1.5 py-0.5 rounded-full font-medium", tk.type === "Bug" ? "bg-red-50 text-red-700 border-red-200 dark:bg-red-950/20 dark:text-red-400 dark:border-red-800" : tk.type === "Sécurité" ? "bg-violet-50 text-violet-700 border-violet-200 dark:bg-violet-950/20 dark:text-violet-400 dark:border-violet-800" : "bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/20 dark:text-amber-400 dark:border-amber-800")}>{tk.type}</span>
+                                <span className="text-[10px] text-muted-foreground">{tk.statut}</span>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+
+                      {/* Timelines */}
+                      <div>
+                        <div className="flex items-center gap-2 mb-2.5">
+                          <CalendarDays className="w-3.5 h-3.5 text-violet-500" />
+                          <span className="text-xs font-semibold text-foreground">Timelines PRE & TC — outil interne</span>
+                          <span className="ml-auto text-[10px] text-muted-foreground">{saveRapport.fonctionnelle.timelines.length} jalon(s) liés</span>
+                        </div>
+                        <div className="space-y-1.5">
+                          {saveRapport.fonctionnelle.timelines.map(tl => (
+                            <div key={tl.ref} className="p-2.5 bg-muted/30 rounded-lg border border-border/40 space-y-1.5">
+                              <div className="flex items-center gap-2">
+                                <span className={cn("text-[10px] font-mono font-bold shrink-0", tl.type === "PRE" ? "text-violet-500" : "text-primary")}>{tl.ref}</span>
+                                <span className={cn("text-[10px] border px-1.5 py-0.5 rounded-full font-medium", tl.type === "PRE" ? "bg-violet-50 text-violet-700 border-violet-200 dark:bg-violet-950/20 dark:text-violet-400 dark:border-violet-800" : "bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-950/20 dark:text-blue-400 dark:border-blue-800")}>{tl.type}</span>
+                                <span className="text-[11px] text-muted-foreground ml-auto shrink-0">Échéance : {tl.echeance}</span>
+                              </div>
+                              <p className="text-xs font-medium text-foreground truncate">{tl.titre}</p>
+                              <p className="text-[11px] text-muted-foreground leading-relaxed">{tl.impact}</p>
+                              <div className="flex items-center gap-2">
+                                <div className="flex-1 bg-muted rounded-full h-1.5">
+                                  <div className={cn("h-1.5 rounded-full", tl.avancement >= 80 ? "bg-emerald-500" : tl.avancement >= 50 ? "bg-primary" : "bg-amber-500")} style={{ width: `${tl.avancement}%` }} />
+                                </div>
+                                <span className="text-[10px] text-muted-foreground shrink-0">{tl.avancement}%</span>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {rapportTab === "revueCode" && (
+                    <div className="p-5 space-y-5">
+                      {/* Score qualité */}
+                      <div className="flex items-center gap-4 p-4 bg-muted/30 rounded-xl border border-border/40">
+                        <div className={cn("w-16 h-16 rounded-full flex items-center justify-center border-4 text-lg font-bold shrink-0",
+                          saveRapport.revueCode.scoreQualite >= 80 ? "border-emerald-400 text-emerald-600 bg-emerald-50 dark:bg-emerald-950/20" : saveRapport.revueCode.scoreQualite >= 60 ? "border-amber-400 text-amber-600 bg-amber-50 dark:bg-amber-950/20" : "border-red-400 text-red-500 bg-red-50 dark:bg-red-950/20")}>
+                          {saveRapport.revueCode.scoreQualite}
+                        </div>
+                        <div>
+                          <p className="text-sm font-semibold text-foreground">Score qualité du code</p>
+                          <p className="text-xs text-muted-foreground mt-0.5">{saveRapport.revueCode.scoreQualite >= 80 ? "Bonne qualité générale" : saveRapport.revueCode.scoreQualite >= 60 ? "Qualité acceptable — améliorations recommandées" : "Qualité insuffisante — corrections requises"}</p>
+                        </div>
+                      </div>
+
+                      {/* Problèmes */}
+                      <div>
+                        <p className="text-xs font-semibold text-foreground mb-2.5 flex items-center gap-2"><ShieldAlert className="w-3.5 h-3.5 text-amber-500" />Problèmes détectés ({saveRapport.revueCode.problemes.length})</p>
+                        <div className="space-y-1.5">
+                          {saveRapport.revueCode.problemes.map((p, i) => (
+                            <div key={i} className={cn("p-2.5 rounded-lg border space-y-1", p.gravite === "critique" ? "bg-red-50 border-red-200 dark:bg-red-950/20 dark:border-red-800" : p.gravite === "majeur" ? "bg-amber-50 border-amber-200 dark:bg-amber-950/20 dark:border-amber-800" : p.gravite === "mineur" ? "bg-blue-50 border-blue-200 dark:bg-blue-950/20 dark:border-blue-800" : "bg-muted/30 border-border/40")}>
+                              <div className="flex items-center gap-2">
+                                <span className={cn("text-[10px] border px-1.5 py-0.5 rounded-full font-bold uppercase", p.gravite === "critique" ? "bg-red-100 text-red-700 border-red-300 dark:text-red-400 dark:border-red-700" : p.gravite === "majeur" ? "bg-amber-100 text-amber-700 border-amber-300 dark:text-amber-400 dark:border-amber-700" : p.gravite === "mineur" ? "bg-blue-100 text-blue-700 border-blue-300 dark:text-blue-400 dark:border-blue-700" : "bg-muted text-muted-foreground border-border")}>{p.gravite}</span>
+                                <span className="text-[11px] text-muted-foreground">Ligne {p.ligne}</span>
+                              </div>
+                              <p className="text-xs font-medium text-foreground">{p.message}</p>
+                              <p className="text-[11px] text-muted-foreground leading-relaxed"><span className="font-medium text-foreground/60">Suggestion :</span> {p.suggestion}</p>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+
+                      {/* Points positifs */}
+                      <div>
+                        <p className="text-xs font-semibold text-foreground mb-2.5 flex items-center gap-2"><CheckSquare className="w-3.5 h-3.5 text-emerald-500" />Points positifs</p>
+                        <div className="space-y-1">
+                          {saveRapport.revueCode.points.map((pt, i) => (
+                            <div key={i} className="flex items-start gap-2 text-xs text-foreground/80">
+                              <Check className="w-3.5 h-3.5 text-emerald-500 shrink-0 mt-0.5" />
+                              {pt}
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                <div className="px-5 py-3 border-t border-border flex items-center justify-between shrink-0">
+                  <span className="text-xs text-muted-foreground">Analyse générée le {new Date().toLocaleDateString("fr-FR")} à {new Date().toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" })}</span>
+                  <Button size="sm" variant="outline" onClick={() => setSaveModalOpen(false)}>Fermer</Button>
+                </div>
+              </>
+            ) : (
+              /* Prompt initial */
+              <>
+                <div className="px-6 pt-6 pb-4 shrink-0">
+                  <div className="flex items-start gap-4">
+                    <div className="w-10 h-10 rounded-xl bg-emerald-500/15 flex items-center justify-center shrink-0">
+                      <Save className="w-5 h-5 text-emerald-400" />
+                    </div>
+                    <div>
+                      <h2 className="text-base font-bold text-foreground">Fichier enregistré</h2>
+                      <p className="text-sm text-muted-foreground mt-0.5">
+                        <span className="font-mono text-xs text-foreground/70 bg-muted px-1.5 py-0.5 rounded">{file.name}</span> a été sauvegardé avec succès.
+                      </p>
+                      <p className="text-sm text-muted-foreground mt-2">Souhaitez-vous lancer une analyse automatique des impacts de cette modification ?</p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="px-6 pb-4 space-y-2 shrink-0">
+                  <button
+                    onClick={() => setSaveAnalyseOpts(o => ({ ...o, fonctionnelle: !o.fonctionnelle }))}
+                    className={cn("w-full flex items-start gap-3 p-3 rounded-xl border transition-all text-left", saveAnalyseOpts.fonctionnelle ? "border-primary/40 bg-primary/5" : "border-border hover:border-border/80 hover:bg-muted/20")}
+                  >
+                    <div className={cn("mt-0.5 w-4 h-4 rounded border-2 flex items-center justify-center shrink-0 transition-colors", saveAnalyseOpts.fonctionnelle ? "border-primary bg-primary" : "border-muted-foreground")}>
+                      {saveAnalyseOpts.fonctionnelle && <Check className="w-2.5 h-2.5 text-white" />}
+                    </div>
+                    <div>
+                      <p className="text-sm font-semibold text-foreground flex items-center gap-2">
+                        <TrendingUp className="w-3.5 h-3.5 text-primary" />Analyse fonctionnelle des modifications
+                      </p>
+                      <p className="text-xs text-muted-foreground mt-0.5">Interroge Freshdesk, Pipedrive, Trackobug et les Timelines PRE/TC pour évaluer les interactions et conséquences métier des changements apportés.</p>
+                    </div>
+                  </button>
+
+                  <button
+                    onClick={() => setSaveAnalyseOpts(o => ({ ...o, revueCode: !o.revueCode }))}
+                    className={cn("w-full flex items-start gap-3 p-3 rounded-xl border transition-all text-left", saveAnalyseOpts.revueCode ? "border-primary/40 bg-primary/5" : "border-border hover:border-border/80 hover:bg-muted/20")}
+                  >
+                    <div className={cn("mt-0.5 w-4 h-4 rounded border-2 flex items-center justify-center shrink-0 transition-colors", saveAnalyseOpts.revueCode ? "border-primary bg-primary" : "border-muted-foreground")}>
+                      {saveAnalyseOpts.revueCode && <Check className="w-2.5 h-2.5 text-white" />}
+                    </div>
+                    <div>
+                      <p className="text-sm font-semibold text-foreground flex items-center gap-2">
+                        <ShieldCheck className="w-3.5 h-3.5 text-primary" />Revue de code
+                      </p>
+                      <p className="text-xs text-muted-foreground mt-0.5">Analyse la qualité du code modifié : détection de problèmes, suggestions d'amélioration, score de qualité et points positifs.</p>
+                    </div>
+                  </button>
+                </div>
+
+                <div className="px-6 py-4 border-t border-border flex items-center justify-end gap-2 shrink-0">
+                  <Button variant="ghost" size="sm" onClick={() => setSaveModalOpen(false)}>Ignorer</Button>
+                  <Button size="sm" onClick={handleLancerAnalyse} disabled={!saveAnalyseOpts.fonctionnelle && !saveAnalyseOpts.revueCode}>
+                    <Sparkles className="w-3.5 h-3.5 mr-1.5" />Lancer l'analyse
+                  </Button>
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
