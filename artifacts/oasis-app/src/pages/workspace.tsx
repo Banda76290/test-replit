@@ -2576,9 +2576,9 @@ export default function WorkspacePage() {
               <div className="w-16 h-16 rounded-2xl bg-muted/60 flex items-center justify-center mb-6">
                 <Globe className="w-8 h-8 text-primary" />
               </div>
-              <h2 className="text-xl font-bold text-foreground">Sélectionnez un site</h2>
+              <h2 className="text-xl font-bold text-foreground">Ouvrez un document de travail</h2>
               <p className="text-muted-foreground mt-2 max-w-md text-sm">
-                Utilisez le bouton <span className="font-medium text-foreground">Sélectionner un site</span> en haut à droite pour charger l'arborescence de fichiers, puis configurez votre analyse.
+                Utilisez le bouton <span className="font-medium text-foreground">Document de travail</span> en haut à gauche pour sélectionner un numéro TC ou importer un fichier, puis lancez l'analyse.
               </p>
             </div>
           )}
