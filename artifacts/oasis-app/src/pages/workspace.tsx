@@ -670,6 +670,53 @@ const MONACO_OPTIONS_BASE = {
   quickSuggestions: { other: true, comments: false, strings: false },
 };
 
+const MONACO_EDIT_OPTIONS = {
+  ...MONACO_OPTIONS_BASE,
+  readOnly: false,
+  quickSuggestions: { other: true, comments: true, strings: true },
+  suggest: {
+    showWords: true,
+    showKeywords: true,
+    showSnippets: true,
+    showFunctions: true,
+    showMethods: true,
+    showClasses: true,
+    showModules: true,
+    showVariables: true,
+    showProperties: true,
+    showConstants: true,
+    showConstructors: true,
+    showEnums: true,
+    showInterfaces: true,
+    preview: true,
+    previewMode: "subwordSmart" as const,
+  },
+  snippetSuggestions: "top" as const,
+  suggestOnTriggerCharacters: true,
+  acceptSuggestionOnEnter: "on" as const,
+  tabCompletion: "on" as const,
+  parameterHints: { enabled: true, cycle: true },
+  hover: { enabled: true, delay: 300, sticky: true },
+  inlineSuggest: { enabled: true, mode: "subwordSmart" as const },
+  formatOnType: true,
+  formatOnPaste: true,
+  autoClosingBrackets: "always" as const,
+  autoClosingQuotes: "always" as const,
+  autoSurround: "languageDefined" as const,
+  autoIndent: "full" as const,
+  matchBrackets: "always" as const,
+  lightbulb: { enabled: "on" as const },
+  codeLens: true,
+  wordBasedSuggestions: "currentDocument" as const,
+  contextmenu: true,
+  multiCursorModifier: "alt" as const,
+  columnSelection: false,
+  selectionHighlight: true,
+  occurrencesHighlight: "singleFile" as const,
+  links: true,
+  colorDecorators: true,
+};
+
 function SafeDiffEditor({ language, original, modified, diffEditorRef }: {
   language: string;
   original: string;
@@ -931,7 +978,7 @@ function CodeViewer({ file, onClose, prodUrl, saveUrl, editContent, onEditChange
             language={language}
             value={editContent}
             theme="vs-dark"
-            options={{ ...MONACO_OPTIONS_BASE, readOnly: false }}
+            options={MONACO_EDIT_OPTIONS}
             onChange={v => onEditChange(v ?? "")}
             onMount={(editor, monaco) => {
               editorRef.current = editor;
