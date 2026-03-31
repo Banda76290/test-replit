@@ -1,4 +1,5 @@
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef, useCallback, useMemo } from "react";
+import MonacoEditor, { DiffEditor as MonacoDiffEditor } from "@monaco-editor/react";
 import { AppLayout } from "@/components/layout";
 import { Button } from "@/components/ui/button";
 import { useGetPrestation, useRunAnalysis, useSubmitFeedback, type AnalysisResult } from "@workspace/api-client-react";
@@ -96,7 +97,6 @@ function getTreeForUrl(url: string): FileNode[] {
   return PRESTASHOP_TREE;
 }
 
-type DiffLine = { type: "added" | "removed" | "unchanged" | "header"; content: string; lineProd?: number; lineSave?: number };
 
 function getMockCode(name: string): string {
   const n = name.toLowerCase();
@@ -510,35 +510,30 @@ cache_enabled = true
 log_level = warning`;
 }
 
-function getMockDiff(name: string, prodUrl?: string | null, saveUrl?: string | null): DiffLine[] {
-  const code = getMockCode(name).split("\n");
-  const result: DiffLine[] = [];
-  let prodLine = 1, saveLine = 1;
 
-  result.push({ type: "header", content: `--- a/${name}` + (prodUrl ? `  [${prodUrl}]` : "  (production)") });
-  result.push({ type: "header", content: `+++ b/${name}` + (saveUrl ? `  [${saveUrl}]` : "  (save/staging)") });
-  result.push({ type: "header", content: `@@ -1,${code.length} +1,${code.length + 2} @@` });
-
-  const changeAt = Math.floor(code.length * 0.3);
-  const changeAt2 = Math.floor(code.length * 0.6);
-
-  code.forEach((line, i) => {
-    if (i === changeAt) {
-      result.push({ type: "removed", content: `- ${line}`, lineProd: prodLine++ });
-      result.push({ type: "added", content: `+ ${line.replace(/\$id|\btrue\b/, m => m === "true" ? "false" : "$id_order")}`, lineSave: saveLine++ });
-    } else if (i === changeAt + 1) {
-      result.push({ type: "added", content: `+     // TODO: validate before processing`, lineSave: saveLine++ });
-      result.push({ type: "unchanged", content: `  ${line}`, lineProd: prodLine++, lineSave: saveLine++ });
-    } else if (i === changeAt2) {
-      result.push({ type: "removed", content: `- ${line}`, lineProd: prodLine++ });
-      result.push({ type: "added", content: `+ ${line} // updated ${new Date().toLocaleDateString('fr-FR')}`, lineSave: saveLine++ });
-    } else {
-      result.push({ type: "unchanged", content: `  ${line}`, lineProd: prodLine++, lineSave: saveLine++ });
-    }
-  });
-
-  return result;
-}
+const MONACO_OPTIONS_BASE = {
+  fontSize: 13,
+  fontFamily: "'JetBrains Mono', 'Fira Code', 'Cascadia Code', Menlo, monospace",
+  lineHeight: 20,
+  scrollBeyondLastLine: false,
+  automaticLayout: true,
+  minimap: { enabled: true, scale: 1 },
+  scrollbar: { verticalScrollbarSize: 8, horizontalScrollbarSize: 8 },
+  renderLineHighlight: "line" as const,
+  cursorBlinking: "smooth" as const,
+  smoothScrolling: true,
+  tabSize: 2,
+  wordWrap: "off" as const,
+  bracketPairColorization: { enabled: true },
+  guides: { bracketPairs: true, indentation: true },
+  padding: { top: 12, bottom: 12 },
+  overviewRulerLanes: 3,
+  folding: true,
+  foldingHighlight: true,
+  renderWhitespace: "none" as const,
+  suggest: { showWords: false },
+  quickSuggestions: { other: true, comments: false, strings: false },
+};
 
 function CodeViewer({ file, onClose, prodUrl, saveUrl }: {
   file: FileNode;
@@ -549,15 +544,19 @@ function CodeViewer({ file, onClose, prodUrl, saveUrl }: {
   const [tab, setTab] = useState<"code" | "diff" | "edit">("code");
   const [copied, setCopied] = useState(false);
   const [saved, setSaved] = useState(false);
-  const originalCode = getMockCode(file.name);
+  const originalCode = useMemo(() => getMockCode(file.name), [file.name]);
+  const saveCode = useMemo(() => getMockSaveCode(file.name), [file.name]);
+  const language = useMemo(() => getMonacoLanguage(file.name), [file.name]);
   const [editContent, setEditContent] = useState(originalCode);
   const isEdited = editContent !== originalCode;
-  const diff = getMockDiff(file.name, prodUrl, saveUrl);
-  const displayCode = tab === "edit" ? editContent : originalCode;
-  const lines = displayCode.split("\n");
+
+  useEffect(() => {
+    setEditContent(getMockCode(file.name));
+  }, [file.name]);
 
   const handleCopy = () => {
-    navigator.clipboard.writeText(tab === "edit" ? editContent : originalCode).then(() => {
+    const content = tab === "edit" ? editContent : originalCode;
+    navigator.clipboard.writeText(content).then(() => {
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     });
@@ -568,19 +567,19 @@ function CodeViewer({ file, onClose, prodUrl, saveUrl }: {
     setTimeout(() => setSaved(false), 2500);
   };
 
-  const handleReset = () => {
-    setEditContent(originalCode);
-  };
+  const handleReset = () => setEditContent(originalCode);
 
   return (
     <div className="flex flex-col h-full bg-[#1e1e2e] rounded-xl border border-border/30 shadow-sm overflow-hidden">
+      {/* Header */}
       <div className="flex items-center justify-between px-4 py-2.5 border-b border-white/10 bg-[#181825] shrink-0">
         <div className="flex items-center gap-2.5 min-w-0">
           <File className={cn("w-4 h-4 shrink-0", getFileIconColor(file))} strokeWidth={1.5} />
           <span className="text-sm font-mono text-white/90 truncate">{file.name}</span>
           {file.size && <span className="text-xs text-white/40 shrink-0">{file.size}</span>}
+          <span className="shrink-0 text-[10px] text-white/30 bg-white/5 border border-white/10 px-1.5 py-0.5 rounded font-mono">{language}</span>
           {isEdited && (
-            <span className="shrink-0 text-[10px] bg-amber-500/20 text-amber-300 border border-amber-500/30 px-1.5 py-0.5 rounded-full font-medium">modifié</span>
+            <span className="shrink-0 text-[10px] bg-amber-500/20 text-amber-300 border border-amber-500/30 px-1.5 py-0.5 rounded-full font-medium">● modifié</span>
           )}
         </div>
         <div className="flex items-center gap-2 shrink-0">
@@ -598,20 +597,19 @@ function CodeViewer({ file, onClose, prodUrl, saveUrl }: {
               <Pencil className="w-3 h-3" />Éditer
             </button>
           </div>
-          {tab === "edit" && (
+          {tab === "edit" ? (
             <>
               <button onClick={handleReset} title="Réinitialiser" disabled={!isEdited}
                 className={cn("p-1.5 transition-colors rounded", isEdited ? "text-white/50 hover:text-white/80" : "text-white/20 cursor-not-allowed")}>
                 <RotateCcw className="w-3.5 h-3.5" />
               </button>
-              <button onClick={handleSave} title="Sauvegarder"
+              <button onClick={handleSave}
                 className="flex items-center gap-1.5 px-2.5 py-1 text-xs bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 border border-emerald-500/30 rounded transition-colors">
                 {saved ? <Check className="w-3 h-3" /> : <Save className="w-3 h-3" />}
                 {saved ? "Sauvegardé" : "Sauvegarder"}
               </button>
             </>
-          )}
-          {tab !== "edit" && (
+          ) : (
             <button onClick={handleCopy} title="Copier" className="p-1.5 text-white/40 hover:text-white/80 transition-colors rounded">
               {copied ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
             </button>
@@ -622,68 +620,86 @@ function CodeViewer({ file, onClose, prodUrl, saveUrl }: {
         </div>
       </div>
 
+      {/* Diff URL bar */}
       {tab === "diff" && (
         <div className="flex items-center gap-4 px-4 py-1.5 bg-[#181825] border-b border-white/10 text-[11px] shrink-0">
           <div className="flex items-center gap-1.5">
-            <span className="w-2 h-2 rounded-full bg-red-400 inline-block" />
-            <span className="text-red-300/80">Production</span>
-            {prodUrl && <span className="text-white/30 truncate max-w-[160px]">{prodUrl}</span>}
+            <span className="w-2 h-2 rounded-full bg-red-400 inline-block shrink-0" />
+            <span className="text-red-300/80 shrink-0">Production</span>
+            {prodUrl && <span className="text-white/30 truncate max-w-[180px]">{prodUrl}</span>}
           </div>
           <span className="text-white/20">→</span>
           <div className="flex items-center gap-1.5">
-            <span className="w-2 h-2 rounded-full bg-emerald-400 inline-block" />
-            <span className="text-emerald-300/80">Save / Staging</span>
-            {saveUrl && <span className="text-white/30 truncate max-w-[160px]">{saveUrl}</span>}
+            <span className="w-2 h-2 rounded-full bg-emerald-400 inline-block shrink-0" />
+            <span className="text-emerald-300/80 shrink-0">Save / Staging</span>
+            {saveUrl && <span className="text-white/30 truncate max-w-[180px]">{saveUrl}</span>}
+            {!saveUrl && <span className="text-white/20 italic">aucune URL save configurée</span>}
           </div>
         </div>
       )}
 
-      <div className="flex-1 overflow-auto font-mono text-xs leading-5">
-        {tab === "edit" ? (
-          <textarea
-            value={editContent}
-            onChange={e => setEditContent(e.target.value)}
-            spellCheck={false}
-            className="w-full h-full min-h-full bg-transparent text-white/85 p-4 resize-none outline-none leading-5 text-xs font-mono"
-            style={{ tabSize: 2 }}
+      {/* Editor area */}
+      <div className="flex-1 min-h-0">
+        {tab === "code" && (
+          <MonacoEditor
+            height="100%"
+            language={language}
+            value={originalCode}
+            theme="vs-dark"
+            options={{ ...MONACO_OPTIONS_BASE, readOnly: true }}
           />
-        ) : tab === "code" ? (
-          <table className="w-full border-collapse">
-            <tbody>
-              {lines.map((line, i) => (
-                <tr key={i} className="group hover:bg-white/5">
-                  <td className="select-none text-right pr-4 pl-3 py-0 text-white/25 w-10 border-r border-white/5 group-hover:text-white/40">{i + 1}</td>
-                  <td className="pl-4 pr-6 py-0 text-white/85 whitespace-pre">{line || " "}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        ) : (
-          <table className="w-full border-collapse">
-            <tbody>
-              {diff.map((line, i) => (
-                <tr key={i} className={cn(
-                  line.type === "added" && "bg-emerald-500/10",
-                  line.type === "removed" && "bg-red-500/10",
-                  line.type === "header" && "bg-blue-500/8",
-                )}>
-                  <td className={cn("select-none text-right pr-2 pl-3 py-0 w-8 text-xs border-r border-white/5",
-                    line.type === "added" ? "text-emerald-400/60" : line.type === "removed" ? "text-red-400/60" : "text-white/20"
-                  )}>{line.lineProd || " "}</td>
-                  <td className={cn("select-none text-right pr-2 pl-1 py-0 w-8 text-xs border-r border-white/5",
-                    line.type === "added" ? "text-emerald-400/60" : line.type === "removed" ? "text-red-400/60" : "text-white/20"
-                  )}>{line.lineSave || " "}</td>
-                  <td className={cn("pl-3 pr-6 py-0 whitespace-pre text-xs",
-                    line.type === "added" ? "text-emerald-300" : line.type === "removed" ? "text-red-300" : line.type === "header" ? "text-blue-300/80" : "text-white/75"
-                  )}>{line.content}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+        )}
+        {tab === "edit" && (
+          <MonacoEditor
+            height="100%"
+            language={language}
+            value={editContent}
+            theme="vs-dark"
+            options={{ ...MONACO_OPTIONS_BASE, readOnly: false }}
+            onChange={v => setEditContent(v ?? "")}
+          />
+        )}
+        {tab === "diff" && (
+          <MonacoDiffEditor
+            height="100%"
+            language={language}
+            original={originalCode}
+            modified={saveCode}
+            theme="vs-dark"
+            options={{
+              ...MONACO_OPTIONS_BASE,
+              readOnly: true,
+              renderSideBySide: true,
+              enableSplitViewResizing: true,
+            }}
+          />
         )}
       </div>
     </div>
   );
+}
+
+function getMonacoLanguage(name: string): string {
+  const ext = name.split(".").pop()?.toLowerCase() ?? "";
+  const map: Record<string, string> = {
+    php: "php", js: "javascript", jsx: "javascript", ts: "typescript", tsx: "typescript",
+    css: "css", scss: "scss", sass: "scss", html: "html", htm: "html",
+    json: "json", xml: "xml", yaml: "yaml", yml: "yaml", md: "markdown",
+    sql: "sql", sh: "shell", bash: "shell", env: "ini", ini: "ini", conf: "ini",
+    htaccess: "apache", txt: "plaintext", log: "plaintext",
+  };
+  return map[ext] ?? "plaintext";
+}
+
+function getMockSaveCode(name: string): string {
+  const lines = getMockCode(name).split("\n");
+  const changeAt = Math.floor(lines.length * 0.3);
+  const changeAt2 = Math.floor(lines.length * 0.6);
+  const result = [...lines];
+  if (result[changeAt]) result[changeAt] = result[changeAt].replace(/\$id|\btrue\b/, m => m === "true" ? "false" : "$id_order");
+  result.splice(changeAt + 1, 0, "    // TODO: valider avant traitement");
+  if (result[changeAt2 + 1]) result[changeAt2 + 1] = result[changeAt2 + 1] + ` // màj ${new Date().toLocaleDateString("fr-FR")}`;
+  return result.join("\n");
 }
 
 function getFileIconColor(node: FileNode): string {
