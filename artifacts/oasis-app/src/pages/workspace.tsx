@@ -833,211 +833,118 @@ function computeMergedText(hunks: DiffHunk[], res: Record<string, HunkResolution
 // ─── InteractiveDiff component ────────────────────────────────────────────
 
 function InteractiveDiff({
-  original, modified, prodUrl, saveUrl, onApply,
+  language, original, modified, prodUrl, saveUrl, onApply,
 }: {
+  language: string;
   original: string;
   modified: string;
   prodUrl?: string | null;
   saveUrl?: string | null;
   onApply: (merged: string) => void;
 }) {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const deRef = useRef<any>(null);
+  const oeRef = useRef<any>(null);
+  const lhRef = useRef<number>(19);
+
+  // Our computed hunks (for merge logic)
   const hunks = useMemo(() => computeHunks(original, modified), [original, modified]);
+  const changedHunks = useMemo(() => hunks.filter(h => h.type !== "equal"), [hunks]);
+
+  // Overlay button positions: one per Monaco line change
+  const [btnGroups, setBtnGroups] = useState<Array<{
+    hunkId: string;
+    top: number;
+    height: number;
+    origStart: number;
+  }>>([]);
+
+  // Resolution state
   const [res, setRes] = useState<Record<string, HunkResolution>>({});
 
   const mergedText = useMemo(() => computeMergedText(hunks, res), [hunks, res]);
-
-  const changedHunks = hunks.filter(h => h.type !== "equal");
-  const acceptedCount = changedHunks.filter(h => res[h.id] !== undefined && res[h.id] !== "orig").length;
+  const acceptedCount = changedHunks.filter(h => {
+    const r = res[h.id];
+    return r === "mod" || (Array.isArray(r) && (r as number[]).length > 0);
+  }).length;
   const hasChanges = changedHunks.length > 0;
-
-  const setHunk = (id: string, r: HunkResolution) =>
-    setRes(prev => ({ ...prev, [id]: r }));
 
   const acceptAll = () => {
     const next: Record<string, HunkResolution> = {};
-    for (const h of hunks) if (h.type !== "equal") next[h.id] = "mod";
+    for (const h of changedHunks) next[h.id] = "mod";
     setRes(next);
   };
   const rejectAll = () => setRes({});
 
-  // Toggle a single line index inside a changed hunk
-  const toggleLine = (hunk: DiffHunk, side: "orig" | "mod", lineIdx: number) => {
-    const cur = res[hunk.id];
-    const isPartial = Array.isArray(cur);
-    const current: number[] = isPartial ? (cur as number[]) : (cur === "mod"
-      ? hunk.modLines.map((_, i) => i)
-      : cur === "orig" && side === "orig"
-        ? hunk.origLines.map((_, i) => i)
-        : []);
+  // Recompute button positions from Monaco internals
+  const recomputePositions = useCallback(() => {
+    const de = deRef.current;
+    const oe = oeRef.current;
+    if (!de || !oe) return;
+    try {
+      const monacoChanges: any[] = de.getLineChanges() || [];
+      const scrollTop: number = oe.getScrollTop();
+      const lh: number = lhRef.current;
 
-    const has = current.includes(lineIdx);
-    const next = has ? current.filter(x => x !== lineIdx) : [...current, lineIdx].sort((a, b) => a - b);
-    if (next.length === 0) {
-      setHunk(hunk.id, side === "orig" ? "mod" : "orig");
-    } else if (side === "mod" && next.length === hunk.modLines.length) {
-      setHunk(hunk.id, "mod");
-    } else {
-      setHunk(hunk.id, next);
-    }
-  };
+      const groups = monacoChanges.map((mc: any, i: number) => {
+        const hunk = changedHunks[i];
+        if (!hunk) return null;
+        const origStart = mc.originalStartLineNumber || 1;
+        const origEnd = mc.originalEndLineNumber || origStart;
+        const top = oe.getTopForLineNumber(origStart) - scrollTop;
+        const height = (origEnd - origStart + 1) * lh;
+        return { hunkId: hunk.id, top, height: Math.max(height, lh), origStart };
+      }).filter(Boolean) as any[];
 
-  // Derive which mod line indices are "accepted" for a hunk
-  const getAcceptedModLines = (hunk: DiffHunk): Set<number> => {
-    const r = res[hunk.id];
-    if (r === "mod") return new Set(hunk.modLines.map((_, i) => i));
-    if (Array.isArray(r)) return new Set(r as number[]);
-    return new Set();
-  };
+      setBtnGroups(groups);
+    } catch {}
+  }, [changedHunks]);
 
-  const lineNoWidth = "w-10 shrink-0 text-right pr-2 select-none text-[10px] text-white/25 font-mono";
-  const cellBase = "flex-1 font-mono text-[11px] leading-5 whitespace-pre px-1 overflow-hidden text-ellipsis";
+  useEffect(() => {
+    let disposed = false;
+    const origModelRef = { current: null as any };
+    const modModelRef = { current: null as any };
 
-  const renderHunk = (hunk: DiffHunk, hunkIdx: number) => {
-    if (hunk.type === "equal") {
-      // Show context lines (collapse long equal blocks)
-      const lines = hunk.origLines;
-      const CONTEXT = 3;
-      if (lines.length <= CONTEXT * 2 + 1) {
-        return lines.map((line, i) => (
-          <tr key={`${hunk.id}-${i}`} className="group">
-            <td className={cn(lineNoWidth, "text-white/20 py-px")} />
-            <td className={cn(cellBase, "text-white/45 py-px")}>{line || " "}</td>
-            <td className="w-10 shrink-0" />
-            <td className={cn(lineNoWidth, "text-white/20 py-px")} />
-            <td className={cn(cellBase, "text-white/45 py-px")}>{line || " "}</td>
-          </tr>
-        ));
-      }
-      const head = lines.slice(0, CONTEXT);
-      const tail = lines.slice(-CONTEXT);
-      return [
-        ...head.map((line, i) => (
-          <tr key={`${hunk.id}-h${i}`}>
-            <td className={cn(lineNoWidth, "py-px")} />
-            <td className={cn(cellBase, "text-white/45 py-px")}>{line || " "}</td>
-            <td className="w-10 shrink-0" />
-            <td className={cn(lineNoWidth, "py-px")} />
-            <td className={cn(cellBase, "text-white/45 py-px")}>{line || " "}</td>
-          </tr>
-        )),
-        <tr key={`${hunk.id}-skip`}>
-          <td colSpan={5} className="text-center py-1 text-[10px] text-white/25 italic border-y border-white/5">
-            ··· {lines.length - CONTEXT * 2} lignes identiques ···
-          </td>
-        </tr>,
-        ...tail.map((line, i) => (
-          <tr key={`${hunk.id}-t${i}`}>
-            <td className={cn(lineNoWidth, "py-px")} />
-            <td className={cn(cellBase, "text-white/45 py-px")}>{line || " "}</td>
-            <td className="w-10 shrink-0" />
-            <td className={cn(lineNoWidth, "py-px")} />
-            <td className={cn(cellBase, "text-white/45 py-px")}>{line || " "}</td>
-          </tr>
-        )),
-      ];
-    }
+    import("monaco-editor").then(m => {
+      if (disposed || !containerRef.current) return;
 
-    // Changed hunk
-    const r = res[hunk.id] ?? "orig";
-    const acceptedMod = getAcceptedModLines(hunk);
-    const maxLen = Math.max(hunk.origLines.length, hunk.modLines.length);
-    const rows = Array.from({ length: maxLen }, (_, i) => i);
+      const origModel = m.editor.createModel(original, language);
+      const modModel = m.editor.createModel(modified, language);
+      origModelRef.current = origModel;
+      modModelRef.current = modModel;
 
-    return rows.map((i) => {
-      const origLine = hunk.origLines[i];
-      const modLine = hunk.modLines[i];
-      const modAccepted = acceptedMod.has(i);
+      const editor = m.editor.createDiffEditor(containerRef.current!, {
+        ...MONACO_OPTIONS_BASE,
+        readOnly: true,
+        renderSideBySide: true,
+        enableSplitViewResizing: true,
+        theme: "vs-dark",
+      });
+      editor.setModel({ original: origModel, modified: modModel });
+      deRef.current = editor;
 
-      return (
-        <tr key={`${hunk.id}-row${i}`} className="group">
-          {/* Original side */}
-          <td className={cn(lineNoWidth, "py-px", origLine !== undefined ? "text-red-400/40" : "")}>
-            {origLine !== undefined ? String(i + 1) : ""}
-          </td>
-          <td className={cn(
-            cellBase, "py-px relative",
-            origLine !== undefined
-              ? r === "mod"
-                ? "bg-red-900/15 text-red-300/40 line-through"
-                : "bg-red-900/25 text-red-200"
-              : "bg-transparent"
-          )}>
-            {origLine !== undefined ? (origLine || " ") : ""}
-            {/* Per-line ← button (keep this orig line) */}
-            {origLine !== undefined && modLine !== undefined && (
-              <button
-                onClick={() => setHunk(hunk.id, "orig")}
-                className="absolute right-1 top-0 bottom-0 hidden group-hover:flex items-center px-1 text-white/30 hover:text-amber-300 transition-colors"
-                title="Garder cette ligne (original)"
-              >
-                <ChevronLeft className="w-3 h-3" />
-              </button>
-            )}
-          </td>
+      const origEd = editor.getOriginalEditor();
+      oeRef.current = origEd;
+      lhRef.current = origEd.getOption(m.editor.EditorOption.lineHeight) || 19;
 
-          {/* Arrow column — only on first row, spans all rows */}
-          {i === 0 && (
-            <td
-              rowSpan={maxLen}
-              className="w-10 shrink-0 border-x border-white/10 bg-[#181825] align-middle"
-            >
-              <div className="flex flex-col items-center justify-center gap-1 py-1 h-full">
-                {/* Accept modified → */}
-                <button
-                  onClick={() => setHunk(hunk.id, "mod")}
-                  title="Accepter la version Save (→)"
-                  className={cn(
-                    "flex items-center justify-center w-6 h-6 rounded transition-all text-xs font-bold",
-                    r === "mod"
-                      ? "bg-emerald-500/30 text-emerald-300 border border-emerald-500/50"
-                      : "bg-white/5 text-white/30 hover:bg-emerald-500/20 hover:text-emerald-300 border border-white/10"
-                  )}
-                >
-                  →
-                </button>
-                {/* Keep original ← */}
-                <button
-                  onClick={() => setHunk(hunk.id, "orig")}
-                  title="Garder la version Production (←)"
-                  className={cn(
-                    "flex items-center justify-center w-6 h-6 rounded transition-all text-xs font-bold",
-                    r === "orig" || r === undefined
-                      ? "bg-red-500/20 text-red-300 border border-red-500/40"
-                      : "bg-white/5 text-white/30 hover:bg-red-500/20 hover:text-red-300 border border-white/10"
-                  )}
-                >
-                  ←
-                </button>
-              </div>
-            </td>
-          )}
-
-          {/* Modified side */}
-          <td className={cn(lineNoWidth, "py-px", modLine !== undefined ? "text-emerald-400/40" : "")}>
-            {modLine !== undefined ? String(i + 1) : ""}
-          </td>
-          <td className={cn(
-            cellBase, "py-px relative cursor-pointer",
-            modLine !== undefined
-              ? modAccepted
-                ? "bg-emerald-900/35 text-emerald-200"
-                : "bg-emerald-900/15 text-emerald-300/50"
-              : "bg-transparent"
-          )}
-            onClick={() => modLine !== undefined ? toggleLine(hunk, "mod", i) : undefined}
-            title={modLine !== undefined ? (modAccepted ? "Cliquer pour désélectionner cette ligne" : "Cliquer pour sélectionner cette ligne") : ""}
-          >
-            {modLine !== undefined ? (modLine || " ") : ""}
-            {modLine !== undefined && (
-              <span className={cn(
-                "absolute left-0 top-0 bottom-0 w-0.5 transition-all",
-                modAccepted ? "bg-emerald-400" : "bg-transparent group-hover:bg-emerald-400/30"
-              )} />
-            )}
-          </td>
-        </tr>
-      );
+      editor.onDidUpdateDiff(() => { recomputePositions(); });
+      origEd.onDidScrollChange(() => { recomputePositions(); });
     });
+
+    return () => {
+      disposed = true;
+      try { deRef.current?.setModel(null); } catch {}
+      try { deRef.current?.dispose(); } catch {}
+      try { origModelRef.current?.dispose(); } catch {}
+      try { modModelRef.current?.dispose(); } catch {}
+      deRef.current = null;
+      oeRef.current = null;
+    };
+  }, [language, original, modified, recomputePositions]);
+
+  // Scroll Monaco to a given line
+  const revealLine = (lineNo: number) => {
+    try { oeRef.current?.revealLineInCenter(lineNo); } catch {}
   };
 
   return (
@@ -1057,7 +964,6 @@ function InteractiveDiff({
             {saveUrl && <span className="text-white/25 truncate max-w-[120px]">{saveUrl}</span>}
           </div>
         </div>
-
         <div className="flex items-center gap-2 shrink-0">
           {hasChanges && (
             <span className="text-[10px] text-white/30">
@@ -1087,41 +993,69 @@ function InteractiveDiff({
         </div>
       </div>
 
-      {/* Colonne headers */}
-      <div className="flex shrink-0 bg-[#13131f] border-b border-white/10 text-[10px] font-semibold uppercase tracking-wider">
-        <div className="w-10 shrink-0" />
-        <div className="flex-1 px-3 py-1.5 text-red-300/50">Production (original)</div>
-        <div className="w-10 shrink-0 border-x border-white/10" />
-        <div className="w-10 shrink-0" />
-        <div className="flex-1 px-3 py-1.5 text-emerald-300/50">Save / Staging (modifié)</div>
-      </div>
+      {/* Monaco diff editor + overlaid action buttons */}
+      <div className="flex-1 min-h-0 relative">
+        <div ref={containerRef} style={{ width: "100%", height: "100%" }} />
 
-      {/* Diff table */}
-      {!hasChanges ? (
-        <div className="flex-1 flex items-center justify-center">
-          <div className="text-center">
-            <div className="w-10 h-10 rounded-full bg-emerald-500/15 flex items-center justify-center mx-auto mb-3">
-              <CheckCircle2 className="w-5 h-5 text-emerald-400" />
-            </div>
-            <p className="text-sm font-medium text-white/70">Aucune différence détectée</p>
-            <p className="text-[11px] text-white/30 mt-1">Les deux versions sont identiques.</p>
-          </div>
-        </div>
-      ) : (
-        <div className="flex-1 overflow-auto">
-          <table className="w-full border-collapse min-w-[600px]">
-            <tbody>
-              {hunks.map((hunk, idx) => renderHunk(hunk, idx))}
-            </tbody>
-          </table>
-        </div>
-      )}
+        {/* Overlay: action buttons per diff hunk */}
+        <div className="absolute inset-0 pointer-events-none overflow-hidden" style={{ zIndex: 10 }}>
+          {btnGroups.map(group => {
+            const hunk = changedHunks.find(h => h.id === group.hunkId);
+            if (!hunk) return null;
+            const r = res[group.hunkId] ?? "orig";
+            const isAccepted = r === "mod" || (Array.isArray(r) && (r as number[]).length > 0);
+            const isRejected = r === "orig";
 
-      {/* Legend */}
-      <div className="shrink-0 flex items-center gap-4 px-4 py-1.5 bg-[#13131f] border-t border-white/10 text-[10px] text-white/25">
-        <span><span className="text-red-300/60">Rouge</span> = ligne supprimée (production)</span>
-        <span><span className="text-emerald-300/60">Vert</span> = ligne ajoutée (save)</span>
-        <span className="ml-auto">Cliquer sur une ligne verte pour la sélectionner · → accepter · ← rejeter</span>
+            // Center horizontally (between the two editors at ~50%)
+            return (
+              <div
+                key={group.hunkId}
+                className="absolute pointer-events-auto"
+                style={{
+                  top: Math.max(4, group.top + group.height / 2 - 20),
+                  left: "50%",
+                  transform: "translateX(-50%)",
+                }}
+                onClick={() => revealLine(group.origStart)}
+              >
+                <div className={cn(
+                  "flex flex-col shadow-xl rounded border overflow-hidden select-none",
+                  "bg-[#1a1a2e] border-white/20 backdrop-blur-sm"
+                )}>
+                  {/* Accept → */}
+                  <button
+                    onClick={e => { e.stopPropagation(); setRes(prev => ({ ...prev, [group.hunkId]: "mod" })); }}
+                    title="Accepter cette modification (Save → Production)"
+                    className={cn(
+                      "px-2.5 py-1 text-[10px] font-bold flex items-center gap-1.5 transition-all",
+                      isAccepted
+                        ? "bg-emerald-500/30 text-emerald-200"
+                        : "text-white/35 hover:bg-emerald-500/20 hover:text-emerald-200"
+                    )}
+                  >
+                    <ChevronRight className="w-3 h-3" />
+                    Accepter
+                  </button>
+                  <div className="h-px bg-white/10" />
+                  {/* Reject ← */}
+                  <button
+                    onClick={e => { e.stopPropagation(); setRes(prev => ({ ...prev, [group.hunkId]: "orig" })); }}
+                    title="Garder l'original (Production)"
+                    className={cn(
+                      "px-2.5 py-1 text-[10px] font-bold flex items-center gap-1.5 transition-all",
+                      isRejected
+                        ? "bg-red-500/25 text-red-200"
+                        : "text-white/35 hover:bg-red-500/15 hover:text-red-200"
+                    )}
+                  >
+                    <ChevronLeft className="w-3 h-3" />
+                    Garder
+                  </button>
+                </div>
+              </div>
+            );
+          })}
+        </div>
       </div>
     </div>
   );
@@ -1324,6 +1258,7 @@ function CodeViewer({ file, onClose, prodUrl, saveUrl, editContent, onEditChange
         )}
         {tab === "diff" && (
           <InteractiveDiff
+            language={language}
             original={originalCode}
             modified={saveCode}
             prodUrl={prodUrl}
