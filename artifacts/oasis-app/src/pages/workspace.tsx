@@ -9,7 +9,7 @@ import {
   Globe, ChevronDown, ChevronRight as ChevronRightIcon, Search,
   Folder, FolderOpen, File, LayoutGrid, List,
   SortAsc, Filter, Home, ExternalLink, RefreshCw, Settings2,
-  X, GitBranch, Code2, Copy, Check
+  X, GitBranch, Code2, Copy, Check, Pencil, RotateCcw, Save
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -510,13 +510,13 @@ cache_enabled = true
 log_level = warning`;
 }
 
-function getMockDiff(name: string): DiffLine[] {
+function getMockDiff(name: string, prodUrl?: string | null, saveUrl?: string | null): DiffLine[] {
   const code = getMockCode(name).split("\n");
   const result: DiffLine[] = [];
   let prodLine = 1, saveLine = 1;
 
-  result.push({ type: "header", content: `--- a/${name}  (production)` });
-  result.push({ type: "header", content: `+++ b/${name}  (save/staging)` });
+  result.push({ type: "header", content: `--- a/${name}` + (prodUrl ? `  [${prodUrl}]` : "  (production)") });
+  result.push({ type: "header", content: `+++ b/${name}` + (saveUrl ? `  [${saveUrl}]` : "  (save/staging)") });
   result.push({ type: "header", content: `@@ -1,${code.length} +1,${code.length + 2} @@` });
 
   const changeAt = Math.floor(code.length * 0.3);
@@ -540,27 +540,48 @@ function getMockDiff(name: string): DiffLine[] {
   return result;
 }
 
-function CodeViewer({ file, onClose }: { file: FileNode; onClose: () => void }) {
-  const [tab, setTab] = useState<"code" | "diff">("code");
+function CodeViewer({ file, onClose, prodUrl, saveUrl }: {
+  file: FileNode;
+  onClose: () => void;
+  prodUrl?: string | null;
+  saveUrl?: string | null;
+}) {
+  const [tab, setTab] = useState<"code" | "diff" | "edit">("code");
   const [copied, setCopied] = useState(false);
-  const code = getMockCode(file.name);
-  const diff = getMockDiff(file.name);
-  const lines = code.split("\n");
+  const [saved, setSaved] = useState(false);
+  const originalCode = getMockCode(file.name);
+  const [editContent, setEditContent] = useState(originalCode);
+  const isEdited = editContent !== originalCode;
+  const diff = getMockDiff(file.name, prodUrl, saveUrl);
+  const displayCode = tab === "edit" ? editContent : originalCode;
+  const lines = displayCode.split("\n");
 
   const handleCopy = () => {
-    navigator.clipboard.writeText(code).then(() => {
+    navigator.clipboard.writeText(tab === "edit" ? editContent : originalCode).then(() => {
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     });
   };
 
+  const handleSave = () => {
+    setSaved(true);
+    setTimeout(() => setSaved(false), 2500);
+  };
+
+  const handleReset = () => {
+    setEditContent(originalCode);
+  };
+
   return (
     <div className="flex flex-col h-full bg-[#1e1e2e] rounded-xl border border-border/30 shadow-sm overflow-hidden">
       <div className="flex items-center justify-between px-4 py-2.5 border-b border-white/10 bg-[#181825] shrink-0">
-        <div className="flex items-center gap-3 min-w-0">
+        <div className="flex items-center gap-2.5 min-w-0">
           <File className={cn("w-4 h-4 shrink-0", getFileIconColor(file))} strokeWidth={1.5} />
           <span className="text-sm font-mono text-white/90 truncate">{file.name}</span>
           {file.size && <span className="text-xs text-white/40 shrink-0">{file.size}</span>}
+          {isEdited && (
+            <span className="shrink-0 text-[10px] bg-amber-500/20 text-amber-300 border border-amber-500/30 px-1.5 py-0.5 rounded-full font-medium">modifié</span>
+          )}
         </div>
         <div className="flex items-center gap-2 shrink-0">
           <div className="flex items-center border border-white/10 rounded-md overflow-hidden">
@@ -572,18 +593,61 @@ function CodeViewer({ file, onClose }: { file: FileNode; onClose: () => void }) 
               className={cn("px-3 py-1 text-xs flex items-center gap-1.5 transition-colors border-l border-white/10", tab === "diff" ? "bg-primary/20 text-primary" : "text-white/50 hover:text-white/80 hover:bg-white/5")}>
               <GitBranch className="w-3 h-3" />Diff
             </button>
+            <button onClick={() => setTab("edit")}
+              className={cn("px-3 py-1 text-xs flex items-center gap-1.5 transition-colors border-l border-white/10", tab === "edit" ? "bg-amber-500/20 text-amber-300" : "text-white/50 hover:text-white/80 hover:bg-white/5")}>
+              <Pencil className="w-3 h-3" />Éditer
+            </button>
           </div>
-          <button onClick={handleCopy} title="Copier" className="p-1.5 text-white/40 hover:text-white/80 transition-colors rounded">
-            {copied ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
-          </button>
+          {tab === "edit" && (
+            <>
+              <button onClick={handleReset} title="Réinitialiser" disabled={!isEdited}
+                className={cn("p-1.5 transition-colors rounded", isEdited ? "text-white/50 hover:text-white/80" : "text-white/20 cursor-not-allowed")}>
+                <RotateCcw className="w-3.5 h-3.5" />
+              </button>
+              <button onClick={handleSave} title="Sauvegarder"
+                className="flex items-center gap-1.5 px-2.5 py-1 text-xs bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 border border-emerald-500/30 rounded transition-colors">
+                {saved ? <Check className="w-3 h-3" /> : <Save className="w-3 h-3" />}
+                {saved ? "Sauvegardé" : "Sauvegarder"}
+              </button>
+            </>
+          )}
+          {tab !== "edit" && (
+            <button onClick={handleCopy} title="Copier" className="p-1.5 text-white/40 hover:text-white/80 transition-colors rounded">
+              {copied ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
+            </button>
+          )}
           <button onClick={onClose} title="Fermer" className="p-1.5 text-white/40 hover:text-white/80 transition-colors rounded">
             <X className="w-3.5 h-3.5" />
           </button>
         </div>
       </div>
 
+      {tab === "diff" && (
+        <div className="flex items-center gap-4 px-4 py-1.5 bg-[#181825] border-b border-white/10 text-[11px] shrink-0">
+          <div className="flex items-center gap-1.5">
+            <span className="w-2 h-2 rounded-full bg-red-400 inline-block" />
+            <span className="text-red-300/80">Production</span>
+            {prodUrl && <span className="text-white/30 truncate max-w-[160px]">{prodUrl}</span>}
+          </div>
+          <span className="text-white/20">→</span>
+          <div className="flex items-center gap-1.5">
+            <span className="w-2 h-2 rounded-full bg-emerald-400 inline-block" />
+            <span className="text-emerald-300/80">Save / Staging</span>
+            {saveUrl && <span className="text-white/30 truncate max-w-[160px]">{saveUrl}</span>}
+          </div>
+        </div>
+      )}
+
       <div className="flex-1 overflow-auto font-mono text-xs leading-5">
-        {tab === "code" ? (
+        {tab === "edit" ? (
+          <textarea
+            value={editContent}
+            onChange={e => setEditContent(e.target.value)}
+            spellCheck={false}
+            className="w-full h-full min-h-full bg-transparent text-white/85 p-4 resize-none outline-none leading-5 text-xs font-mono"
+            style={{ tabSize: 2 }}
+          />
+        ) : tab === "code" ? (
           <table className="w-full border-collapse">
             <tbody>
               {lines.map((line, i) => (
@@ -601,7 +665,7 @@ function CodeViewer({ file, onClose }: { file: FileNode; onClose: () => void }) 
                 <tr key={i} className={cn(
                   line.type === "added" && "bg-emerald-500/10",
                   line.type === "removed" && "bg-red-500/10",
-                  line.type === "header" && "bg-blue-500/10",
+                  line.type === "header" && "bg-blue-500/8",
                 )}>
                   <td className={cn("select-none text-right pr-2 pl-3 py-0 w-8 text-xs border-r border-white/5",
                     line.type === "added" ? "text-emerald-400/60" : line.type === "removed" ? "text-red-400/60" : "text-white/20"
@@ -610,7 +674,7 @@ function CodeViewer({ file, onClose }: { file: FileNode; onClose: () => void }) 
                     line.type === "added" ? "text-emerald-400/60" : line.type === "removed" ? "text-red-400/60" : "text-white/20"
                   )}>{line.lineSave || " "}</td>
                   <td className={cn("pl-3 pr-6 py-0 whitespace-pre text-xs",
-                    line.type === "added" ? "text-emerald-300" : line.type === "removed" ? "text-red-300" : line.type === "header" ? "text-blue-300" : "text-white/75"
+                    line.type === "added" ? "text-emerald-300" : line.type === "removed" ? "text-red-300" : line.type === "header" ? "text-blue-300/80" : "text-white/75"
                   )}>{line.content}</td>
                 </tr>
               ))}
@@ -1125,7 +1189,12 @@ export default function WorkspacePage() {
               </div>
               {selectedFile && (
                 <div className="flex-1 h-full min-w-0">
-                  <CodeViewer file={selectedFile} onClose={() => setSelectedFile(null)} />
+                  <CodeViewer
+                    file={selectedFile}
+                    onClose={() => setSelectedFile(null)}
+                    prodUrl={prestation?.productionUrl ?? allPrestationUrls.find(e => e.url === selectedUrl && e.type === "prod")?.url ?? (selectedUrl ?? null)}
+                    saveUrl={prestation?.saveUrls?.[0] ?? allPrestationUrls.find(e => e.name === allPrestationUrls.find(e2 => e2.url === selectedUrl)?.name && e.type === "save")?.url ?? null}
+                  />
                 </div>
               )}
             </div>
