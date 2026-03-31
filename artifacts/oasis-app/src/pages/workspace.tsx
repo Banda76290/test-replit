@@ -12,7 +12,7 @@ import {
   SortAsc, Filter, Home, ExternalLink, RefreshCw, Settings2,
   X, GitBranch, Code2, Copy, Check, Pencil, RotateCcw, Save,
   AlertCircle, Clock, ZapOff, ChevronLeft,
-  Maximize2, Minimize2
+  Maximize2, Minimize2, Upload, Hash, FileUp, FolderSearch
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -26,6 +26,37 @@ const TASK_TYPES = [
   { id: "propose-fix", label: "Proposer un correctif" },
   { id: "produce-diff", label: "Produire un diff de code" },
 ];
+
+type TacheCode = {
+  code: string;
+  titre: string;
+  url: string;
+  prestation: string;
+  client: string;
+  type: "correctif" | "evolution" | "audit" | "migration";
+  statut: "en-cours" | "a-faire" | "termine";
+};
+
+const MOCK_TC: TacheCode[] = [
+  { code: "TC-2025-001", titre: "Correction bug panier — calcul des frais de port", url: "https://www.boutique-example.fr", prestation: "Migration PS 1.7 → 8.x", client: "Boutique Example", type: "correctif", statut: "en-cours" },
+  { code: "TC-2025-002", titre: "Intégration module paiement CB Stripe", url: "https://staging.boutique-example.fr", prestation: "Migration PS 1.7 → 8.x", client: "Boutique Example", type: "evolution", statut: "a-faire" },
+  { code: "TC-2025-003", titre: "Optimisation temps de chargement pages produit", url: "https://www.maison-deco.fr", prestation: "Refonte thème", client: "Maison Déco", type: "audit", statut: "en-cours" },
+  { code: "TC-2025-004", titre: "Ajout filtres produits dynamiques AJAX", url: "https://preprod.maison-deco.fr", prestation: "Refonte thème", client: "Maison Déco", type: "evolution", statut: "a-faire" },
+  { code: "TC-2025-005", titre: "Migration base de données PS 1.6 vers 1.7", url: "https://www.techshop-demo.fr", prestation: "Migration PS 1.6 → 1.7", client: "TechShop", type: "migration", statut: "en-cours" },
+  { code: "TC-2025-006", titre: "Correction affichage mobile — responsive checkout", url: "https://www.techshop-demo.fr", prestation: "Migration PS 1.6 → 1.7", client: "TechShop", type: "correctif", statut: "a-faire" },
+  { code: "TC-2024-089", titre: "Audit sécurité modules tiers", url: "https://www.luxmode-paris.com", prestation: "Audit & maintenance", client: "LuxMode Paris", type: "audit", statut: "termine" },
+  { code: "TC-2024-112", titre: "Génération automatique sitemap XML", url: "https://recette.luxmode-paris.com", prestation: "Audit & maintenance", client: "LuxMode Paris", type: "evolution", statut: "termine" },
+];
+
+const TC_TYPE_LABELS: Record<TacheCode["type"], string> = {
+  correctif: "Correctif", evolution: "Évolution", audit: "Audit", migration: "Migration",
+};
+const TC_TYPE_COLORS: Record<TacheCode["type"], string> = {
+  correctif: "bg-red-50 text-red-700 border-red-200 dark:bg-red-950/30 dark:text-red-400 dark:border-red-800",
+  evolution: "bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-950/30 dark:text-blue-400 dark:border-blue-800",
+  audit: "bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/30 dark:text-amber-400 dark:border-amber-800",
+  migration: "bg-violet-50 text-violet-700 border-violet-200 dark:bg-violet-950/30 dark:text-violet-400 dark:border-violet-800",
+};
 
 type FileNode = {
   id: string;
@@ -1157,6 +1188,15 @@ export default function WorkspacePage() {
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [siteOpen, setSiteOpen] = useState(false);
   const [analysisOpen, setAnalysisOpen] = useState(false);
+
+  const [docOpen, setDocOpen] = useState(false);
+  const [docMode, setDocMode] = useState<"tc" | "upload">("tc");
+  const [tcInput, setTcInput] = useState("");
+  const [tcResult, setTcResult] = useState<TacheCode | null>(null);
+  const [tcNotFound, setTcNotFound] = useState(false);
+  const [tcSuggestions, setTcSuggestions] = useState<TacheCode[]>([]);
+  const [uploadedFile, setUploadedFile] = useState<{ name: string; size: number; content: string } | null>(null);
+  const [isDragOver, setIsDragOver] = useState(false);
   const [openTabs, setOpenTabs] = useState<FileNode[]>([]);
   const [activeFileId, setActiveFileId] = useState<string | null>(null);
   const [editedContents, setEditedContents] = useState<Record<string, string>>({});
@@ -1190,6 +1230,9 @@ export default function WorkspacePage() {
   const siteRef = useRef<HTMLDivElement>(null);
   const analysisRef = useRef<HTMLDivElement>(null);
   const urlInputRef = useRef<HTMLInputElement>(null);
+  const docRef = useRef<HTMLDivElement>(null);
+  const tcInputRef = useRef<HTMLInputElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const availableUrls: string[] = prestation
     ? [prestation.productionUrl, ...(prestation.saveUrls || [])].filter(Boolean)
@@ -1229,9 +1272,10 @@ export default function WorkspacePage() {
     function handleClick(e: MouseEvent) {
       if (siteRef.current && !siteRef.current.contains(e.target as Node)) setSiteOpen(false);
       if (analysisRef.current && !analysisRef.current.contains(e.target as Node)) setAnalysisOpen(false);
+      if (docRef.current && !docRef.current.contains(e.target as Node)) setDocOpen(false);
     }
     function handleKeyDown(e: KeyboardEvent) {
-      if (e.key === "Escape") setIsEditorFullscreen(false);
+      if (e.key === "Escape") { setIsEditorFullscreen(false); setDocOpen(false); }
     }
     document.addEventListener("mousedown", handleClick);
     document.addEventListener("keydown", handleKeyDown);
@@ -1240,6 +1284,71 @@ export default function WorkspacePage() {
       document.removeEventListener("keydown", handleKeyDown);
     };
   }, []);
+
+  const handleTcInput = (value: string) => {
+    setTcInput(value);
+    setTcNotFound(false);
+    setTcResult(null);
+    if (value.trim().length >= 2) {
+      const q = value.trim().toLowerCase();
+      const suggestions = MOCK_TC.filter(
+        tc => tc.code.toLowerCase().includes(q) ||
+          tc.titre.toLowerCase().includes(q) ||
+          tc.client.toLowerCase().includes(q)
+      ).slice(0, 5);
+      setTcSuggestions(suggestions);
+    } else {
+      setTcSuggestions([]);
+    }
+  };
+
+  const handleTcSelect = (tc: TacheCode) => {
+    setTcResult(tc);
+    setTcInput(tc.code);
+    setTcSuggestions([]);
+    setTcNotFound(false);
+    setUrlInput(tc.url);
+    setSelectedUrl(tc.url);
+    setOpenTabs([]);
+    setActiveFileId(null);
+    setEditedContents({});
+    setSearchMode(false);
+    setSearchQuery("");
+    setScrollToLine(null);
+  };
+
+  const handleTcSearch = () => {
+    const q = tcInput.trim().toUpperCase();
+    const found = MOCK_TC.find(tc => tc.code.toUpperCase() === q);
+    if (found) {
+      handleTcSelect(found);
+    } else {
+      setTcNotFound(true);
+      setTcResult(null);
+    }
+  };
+
+  const handleFileAccept = (file: File) => {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      setUploadedFile({ name: file.name, size: file.size, content: e.target?.result as string });
+    };
+    reader.readAsText(file, "utf-8");
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragOver(false);
+    const file = e.dataTransfer.files[0];
+    if (file) handleFileAccept(file);
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) handleFileAccept(file);
+  };
+
+  const docHasContent = tcResult !== null || uploadedFile !== null;
 
   const handleSearch = useCallback(() => {
     if (urlInput.trim()) {
@@ -1313,6 +1422,202 @@ export default function WorkspacePage() {
             </div>
 
             <div className="flex items-center gap-2 shrink-0 flex-wrap">
+
+              {/* Sélecteur de document de travail */}
+              <div ref={docRef} className="relative">
+                <button
+                  onClick={() => { setDocOpen(v => !v); setSiteOpen(false); setAnalysisOpen(false); }}
+                  className={cn(
+                    "flex items-center gap-2 px-3 py-2 rounded-lg border text-sm transition-all",
+                    docOpen || docHasContent
+                      ? "border-primary/40 bg-primary/5 text-primary"
+                      : "border-border bg-card text-foreground hover:border-primary/30 hover:bg-muted/40"
+                  )}
+                >
+                  {uploadedFile ? (
+                    <FileUp className="w-4 h-4 shrink-0" />
+                  ) : tcResult ? (
+                    <Hash className="w-4 h-4 shrink-0" />
+                  ) : (
+                    <FolderSearch className="w-4 h-4 shrink-0" />
+                  )}
+                  <span className="font-medium">
+                    {uploadedFile ? uploadedFile.name : tcResult ? tcResult.code : "Document de travail"}
+                  </span>
+                  {docHasContent && <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500 shrink-0" />}
+                  <ChevronDown className={cn("w-3.5 h-3.5 text-muted-foreground transition-transform shrink-0", docOpen && "rotate-180")} />
+                </button>
+
+                {docOpen && (
+                  <div className="absolute left-0 top-full mt-2 w-[420px] bg-card border border-border rounded-xl shadow-xl z-50">
+                    {/* Onglets */}
+                    <div className="flex border-b border-border">
+                      <button
+                        onClick={() => setDocMode("tc")}
+                        className={cn(
+                          "flex-1 flex items-center justify-center gap-2 py-2.5 text-sm font-medium transition-colors rounded-tl-xl",
+                          docMode === "tc" ? "text-primary border-b-2 border-primary bg-primary/5" : "text-muted-foreground hover:text-foreground hover:bg-muted/30"
+                        )}
+                      >
+                        <Hash className="w-3.5 h-3.5" />N° de tâche
+                      </button>
+                      <button
+                        onClick={() => setDocMode("upload")}
+                        className={cn(
+                          "flex-1 flex items-center justify-center gap-2 py-2.5 text-sm font-medium transition-colors rounded-tr-xl",
+                          docMode === "upload" ? "text-primary border-b-2 border-primary bg-primary/5" : "text-muted-foreground hover:text-foreground hover:bg-muted/30"
+                        )}
+                      >
+                        <Upload className="w-3.5 h-3.5" />Import fichier
+                      </button>
+                    </div>
+
+                    <div className="p-4 space-y-3">
+                      {docMode === "tc" ? (
+                        <>
+                          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Rechercher par N° TC, titre ou client</p>
+                          <div className="relative">
+                            <Hash className="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                            <input
+                              ref={tcInputRef}
+                              type="text"
+                              value={tcInput}
+                              onChange={e => handleTcInput(e.target.value)}
+                              onKeyDown={e => e.key === "Enter" && handleTcSearch()}
+                              placeholder="Ex : TC-2025-001"
+                              className="w-full pl-9 pr-3 py-2 bg-muted/20 border border-border rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all font-mono"
+                              autoFocus
+                            />
+                          </div>
+
+                          {/* Suggestions */}
+                          {tcSuggestions.length > 0 && !tcResult && (
+                            <div className="border border-border rounded-lg overflow-hidden divide-y divide-border/50">
+                              {tcSuggestions.map(tc => (
+                                <button
+                                  key={tc.code}
+                                  onMouseDown={e => { e.preventDefault(); handleTcSelect(tc); }}
+                                  className="w-full text-left px-3 py-2.5 hover:bg-muted/60 transition-colors"
+                                >
+                                  <div className="flex items-center gap-2">
+                                    <span className="text-xs font-mono font-semibold text-primary">{tc.code}</span>
+                                    <span className={cn("text-[10px] border px-1.5 py-0.5 rounded-full font-medium shrink-0", TC_TYPE_COLORS[tc.type])}>{TC_TYPE_LABELS[tc.type]}</span>
+                                  </div>
+                                  <p className="text-xs text-foreground/80 mt-0.5 truncate">{tc.titre}</p>
+                                  <p className="text-[11px] text-muted-foreground mt-0.5">{tc.client} — {tc.prestation}</p>
+                                </button>
+                              ))}
+                            </div>
+                          )}
+
+                          {/* TC non trouvé */}
+                          {tcNotFound && (
+                            <div className="flex items-center gap-2 p-2.5 bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-800 rounded-lg text-xs text-red-600 dark:text-red-400">
+                              <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+                              <span>Aucune tâche trouvée pour ce numéro TC</span>
+                            </div>
+                          )}
+
+                          {/* Résultat TC trouvé */}
+                          {tcResult && (
+                            <div className="border border-primary/30 bg-primary/5 rounded-lg p-3 space-y-2">
+                              <div className="flex items-start justify-between gap-2">
+                                <div className="flex items-center gap-2 flex-wrap">
+                                  <span className="text-xs font-mono font-bold text-primary">{tcResult.code}</span>
+                                  <span className={cn("text-[10px] border px-1.5 py-0.5 rounded-full font-medium shrink-0", TC_TYPE_COLORS[tcResult.type])}>{TC_TYPE_LABELS[tcResult.type]}</span>
+                                </div>
+                                <button onClick={() => { setTcResult(null); setTcInput(""); }} className="text-muted-foreground hover:text-foreground transition-colors shrink-0">
+                                  <X className="w-3.5 h-3.5" />
+                                </button>
+                              </div>
+                              <p className="text-sm font-medium text-foreground leading-snug">{tcResult.titre}</p>
+                              <div className="text-xs text-muted-foreground space-y-0.5">
+                                <p><span className="font-medium text-foreground/70">Client :</span> {tcResult.client}</p>
+                                <p><span className="font-medium text-foreground/70">Prestation :</span> {tcResult.prestation}</p>
+                              </div>
+                              <div className="flex items-center gap-1.5 text-xs border-t border-primary/20 pt-2 mt-1">
+                                <Globe className="w-3 h-3 text-primary" />
+                                <span className="text-primary font-medium truncate">{tcResult.url}</span>
+                                <CheckCircle2 className="w-3 h-3 text-emerald-500 shrink-0 ml-auto" />
+                                <span className="text-emerald-600 dark:text-emerald-400 shrink-0">Site auto-sélectionné</span>
+                              </div>
+                            </div>
+                          )}
+
+                          {!tcResult && (
+                            <Button size="sm" onClick={handleTcSearch} className="w-full">
+                              <Search className="w-3.5 h-3.5 mr-1.5" />Valider le N° TC
+                            </Button>
+                          )}
+                        </>
+                      ) : (
+                        <>
+                          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Importer un document de travail</p>
+
+                          <input
+                            ref={fileInputRef}
+                            type="file"
+                            className="hidden"
+                            accept=".txt,.md,.pdf,.doc,.docx,.html,.php,.js,.ts,.json,.yaml,.yml,.xml,.csv"
+                            onChange={handleFileChange}
+                          />
+
+                          {!uploadedFile ? (
+                            <div
+                              onDragOver={e => { e.preventDefault(); setIsDragOver(true); }}
+                              onDragLeave={() => setIsDragOver(false)}
+                              onDrop={handleDrop}
+                              onClick={() => fileInputRef.current?.click()}
+                              className={cn(
+                                "border-2 border-dashed rounded-lg p-6 flex flex-col items-center gap-3 cursor-pointer transition-all",
+                                isDragOver
+                                  ? "border-primary bg-primary/10"
+                                  : "border-border hover:border-primary/50 hover:bg-muted/30"
+                              )}
+                            >
+                              <div className={cn("w-10 h-10 rounded-full flex items-center justify-center transition-colors", isDragOver ? "bg-primary/20" : "bg-muted")}>
+                                <Upload className={cn("w-5 h-5 transition-colors", isDragOver ? "text-primary" : "text-muted-foreground")} />
+                              </div>
+                              <div className="text-center">
+                                <p className="text-sm font-medium text-foreground">
+                                  {isDragOver ? "Relâchez pour importer" : "Glissez un fichier ici"}
+                                </p>
+                                <p className="text-xs text-muted-foreground mt-0.5">ou <span className="text-primary underline underline-offset-2">parcourir</span> vos fichiers</p>
+                              </div>
+                              <p className="text-[11px] text-muted-foreground">TXT, MD, PDF, HTML, PHP, JS, JSON…</p>
+                            </div>
+                          ) : (
+                            <div className="border border-emerald-200 dark:border-emerald-800 bg-emerald-50 dark:bg-emerald-950/20 rounded-lg p-3 space-y-2">
+                              <div className="flex items-center gap-2">
+                                <FileText className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
+                                <div className="flex-1 min-w-0">
+                                  <p className="text-sm font-medium text-foreground truncate">{uploadedFile.name}</p>
+                                  <p className="text-xs text-muted-foreground">{uploadedFile.size < 1024 ? `${uploadedFile.size} o` : `${(uploadedFile.size / 1024).toFixed(1)} Ko`}</p>
+                                </div>
+                                <div className="flex items-center gap-1.5 shrink-0">
+                                  <button
+                                    onClick={() => fileInputRef.current?.click()}
+                                    className="text-xs text-primary hover:underline underline-offset-2"
+                                  >
+                                    Remplacer
+                                  </button>
+                                  <button onClick={() => setUploadedFile(null)} className="text-muted-foreground hover:text-foreground transition-colors">
+                                    <X className="w-3.5 h-3.5" />
+                                  </button>
+                                </div>
+                              </div>
+                              <div className="flex items-center gap-1.5 text-xs text-emerald-600 dark:text-emerald-400">
+                                <CheckCircle2 className="w-3 h-3" />Document importé avec succès
+                              </div>
+                            </div>
+                          )}
+                        </>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
+
               <div ref={siteRef} className="relative">
                 <button
                   onClick={() => { setSiteOpen(v => !v); setAnalysisOpen(false); }}
