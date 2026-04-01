@@ -1,0 +1,14 @@
+node_modules
+dist
+.git
+.cache
+.local
+.replit
+.config
+replit.nix
+CoteOptimale
+attached_assets
+artifacts/mockup-sandbox/node_modules
+*.tsbuildinfo
+.env
+.env.*

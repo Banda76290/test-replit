@@ -54,3 +54,8 @@ Thumbs.db
 .replit
 replit.nix
 .config/
+
+# Non-production
+CoteOptimale/
+attached_assets/
+artifacts/mockup-sandbox/

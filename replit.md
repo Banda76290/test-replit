@@ -125,3 +125,41 @@ Simple cookie-based session. Login creates a session cookie; `/api/me` validates
 - Rich source data categorized by type (source code, tickets, commercial, etc.)
 - Diff viewer data with before/after code snippets
 - Activity feed and admin profile data
+
+## Docker / Coolify Deployment
+
+The project includes Docker configuration for deployment to Coolify (Kubernetes) or any Docker-compatible platform.
+
+### Files
+
+- `Dockerfile` — Multi-stage build: `node:20-slim` (build) → `node:20-alpine` (runtime). Installs pnpm, builds frontend (Vite) + API (esbuild), copies bundles to minimal runtime image with git.
+- `docker-compose.yml` — Single `app` service on port 5000 with healthcheck (`/api/healthz`). Uses `.env` file for configuration.
+- `entrypoint.sh` — Starts `node dist/index.mjs`.
+- `.dockerignore` — Excludes `node_modules`, `dist`, `.git`, Replit-specific files.
+
+### Production Architecture
+
+In production (`NODE_ENV=production`), the API server serves both:
+1. **API routes** at `/api/*` — all existing endpoints
+2. **Frontend static files** — Vite build output served via `express.static`, with SPA fallback to `index.html`
+
+The API bundle (`dist/index.mjs`) is fully self-contained (esbuild `bundle: true`) — no `node_modules` needed at runtime.
+
+### Environment Variables (Docker)
+
+- `PORT` — Server port (default: 5000)
+- `NODE_ENV` — Set to `production`
+- `CORS_ORIGIN` — Allowed CORS origin (optional, defaults to allow all in dev)
+- `OASIS_PROJECT_ROOT` — Root path for git export feature (defaults to `../..` from cwd)
+- `SESSION_SECRET` — Session cookie secret
+
+### Build Commands
+
+```bash
+docker compose build
+docker compose up -d
+```
+
+### Admin Git Export
+
+The admin export (`GET /api/admin/export`) uses `git archive HEAD --format=zip` to create a clean ZIP. The runtime image includes `git` for this purpose. The admin Git push (`POST /api/admin/git-push`) pushes to a remote repository for Coolify deployment.
