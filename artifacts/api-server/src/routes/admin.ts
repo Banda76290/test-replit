@@ -3,9 +3,11 @@ import { mockUser } from "../mocks/users";
 import { mockActivities } from "../mocks/activities";
 import { requireAdmin } from "../lib/session";
 import { simpleGit } from "simple-git";
+import archiver from "archiver";
 import path from "path";
 import fs from "fs";
-import { execFile, spawn } from "child_process";
+import os from "os";
+import { execFile } from "child_process";
 import { promisify } from "util";
 
 const execFileAsync = promisify(execFile);
@@ -14,6 +16,22 @@ const router: IRouter = Router();
 
 const PROJECT_ROOT = process.env.OASIS_PROJECT_ROOT
   ?? path.resolve(process.cwd(), "../..");
+
+const EXPORT_IGNORE = [
+  "node_modules/**",
+  ".git/**",
+  "dist/**",
+  ".cache/**",
+  ".local/**",
+  ".config/**",
+  ".env",
+  ".env.*",
+  ".replit",
+  "replit.nix",
+  "CoteOptimale/**",
+  "attached_assets/**",
+  "artifacts/mockup-sandbox/**",
+];
 
 async function isGitAvailable(): Promise<boolean> {
   try {
@@ -68,19 +86,10 @@ router.get("/admin/profile", (_req, res) => {
 });
 
 // ── GET /api/admin/export ─────────────────────────────────────────────────
-// Utilise `git archive HEAD --format=zip` pour générer un ZIP agnostique.
-// Les exclusions sont pilotées uniquement par le .gitignore — plus besoin
-// d'une liste manuelle. Compatible Docker / Kubernetes.
+// Pattern CoteOptimale : écrit le ZIP dans un fichier temporaire d'abord
+// (intégrité garantie), puis l'envoie avec Content-Length exact.
+// Les exclusions sont gérées par EXPORT_IGNORE.
 router.get("/admin/export", requireAdmin, async (_req, res) => {
-  const gitOk = await isGitAvailable();
-  if (!gitOk) {
-    res.status(500).json({
-      error: "Git n'est pas installé dans cet environnement.",
-      details: "Ajoutez git à l'image Docker (ex: RUN apt-get install -y git).",
-    });
-    return;
-  }
-
   if (!fs.existsSync(PROJECT_ROOT)) {
     res.status(500).json({
       error: `Répertoire source introuvable : ${PROJECT_ROOT}. Définissez OASIS_PROJECT_ROOT dans les variables d'environnement.`,
@@ -88,39 +97,49 @@ router.get("/admin/export", requireAdmin, async (_req, res) => {
     return;
   }
 
+  let tmpFile: string | null = null;
+
   try {
-    const git = simpleGit(PROJECT_ROOT);
-    await ensureGitRepo(git);
-    await ensureCleanHead(git);
+    tmpFile = path.join(os.tmpdir(), `oasis-export-${Date.now()}.zip`);
+    const output = fs.createWriteStream(tmpFile);
+    const archive = archiver("zip", { zlib: { level: 6 } });
 
-    res.set({
-      "Content-Type": "application/zip",
-      "Content-Disposition": "attachment; filename=oasis-projet-export.zip",
-      "X-Export-Path": PROJECT_ROOT,
+    await new Promise<void>((resolve, reject) => {
+      output.on("close", resolve);
+      output.on("error", reject);
+      archive.on("error", reject);
+
+      archive.pipe(output);
+
+      archive.glob("**/*", {
+        cwd: PROJECT_ROOT,
+        ignore: EXPORT_IGNORE,
+        dot: true,
+      });
+
+      archive.finalize();
     });
 
-    const archive = spawn("git", ["archive", "HEAD", "--format=zip"], {
-      cwd: PROJECT_ROOT,
-      stdio: ["ignore", "pipe", "pipe"],
+    const stat = fs.statSync(tmpFile);
+    res.setHeader("Content-Type", "application/zip");
+    res.setHeader("Content-Disposition", "attachment; filename=\"oasis-projet-export.zip\"");
+    res.setHeader("Content-Length", stat.size);
+
+    const fileStream = fs.createReadStream(tmpFile);
+    fileStream.pipe(res);
+
+    fileStream.on("end", () => {
+      if (tmpFile && fs.existsSync(tmpFile)) fs.unlinkSync(tmpFile);
     });
-
-    let stderr = "";
-    archive.stderr.on("data", (chunk: Buffer) => { stderr += chunk.toString(); });
-
-    archive.stdout.pipe(res);
-
-    archive.on("close", (code) => {
-      if (code !== 0 && !res.headersSent) {
-        res.status(500).json({ error: "Échec de git archive", details: stderr });
-      }
-    });
-
-    archive.on("error", (err) => {
-      if (!res.headersSent) {
-        res.status(500).json({ error: "Échec de git archive", details: err.message });
-      }
+    fileStream.on("error", () => {
+      if (tmpFile && fs.existsSync(tmpFile)) fs.unlinkSync(tmpFile);
     });
   } catch (error: any) {
+    if (tmpFile) {
+      try {
+        if (fs.existsSync(tmpFile)) fs.unlinkSync(tmpFile);
+      } catch {}
+    }
     if (!res.headersSent) {
       res.status(500).json({ error: "Échec de l'export", details: error.message });
     }
