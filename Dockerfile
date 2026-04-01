@@ -15,7 +15,7 @@ COPY artifacts/oasis-app/package.json ./artifacts/oasis-app/
 COPY artifacts/mockup-sandbox/package.json ./artifacts/mockup-sandbox/
 COPY scripts/package.json ./scripts/
 
-RUN pnpm install --frozen-lockfile
+RUN pnpm install --no-frozen-lockfile
 
 COPY . .
 
